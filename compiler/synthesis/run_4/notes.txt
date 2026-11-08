@@ -1,0 +1,18 @@
+Run 4: completed exactly three approved shared search evaluations (16 training tasks x 4 worlds each, 50,000-action horizon, workers=3). Read both allowed shared baselines, training goals, common resource-failure evidence, reference/incumbent emitters, compiler/search/audit/run APIs, and relevant frozen policy/machine sources before evaluation. No validation or test feedback, other search code, or other search results were inspected. Authored files are self-contained, import only re, and depend on goal structure rather than goal name. No existing policy, grammar, machine, guard, monitor, or harness was edited. No additional trajectories were requested. This is a fresh search context using the shared training information, not an independence claim about training data.
+
+Baseline incumbent: 58/64 training successes, mean failure-penalized steps 14678.1875.
+
+Candidate 1: retain incumbent initial equipment gate; replenish active maintained resources with wood/stone/coal/iron surplus margins 8/4/4/4; explicitly descend and search for resource-containing goal sequences after tier-3 gear. Both coal delivery tasks became 4/4, but deeper resource sequences had many more deaths. Direct descent changed preparation/provisioning behavior; this is an interpretation of aggregate outcomes, not an isolated causal measurement.
+
+Candidate 2: keep the same reserve-aware replenishment, restore the incumbent downward handoff and preparation for every goal. This recovered deeper-task performance and improved training success relative to the incumbent. The three remaining failures were two deaths and one timeout; the timeout ended on floor 0 with wood 1, coal 3, and iron 5 after the acquire stage. The approved results do not provide new guard telemetry, so reserve starvation is a hypothesis rather than a directly measured explanation of that timeout.
+
+Candidate 3: retain candidate 2 preparation for deeper sequences; allow direct descent only when the entire resource goal stays within floor 1, reduce stone surplus from 4 to 2, and use frontier exploration when a critical maintained-resource shortage cannot find a known gathering action. These changes target shallow delivery overhead, unnecessary stone work, and unproductive fallback during resource shortage.
+
+Training results (no candidate selected here):
+candidate 1: successes 48/64; mean failure-penalized steps 18615.390625; actual engine steps 747774; evaluator seconds 20.811241874002008; wall seconds 217.79914258400095; source SHA256 72bcf550e4559dfff408eb5c0baed8e621809dac0bc5206f8ea55187f08785a4
+candidate 2: successes 61/64; mean failure-penalized steps 12318.53125; actual engine steps 693007; evaluator seconds 18.7697451669992; wall seconds 217.15443874999983; source SHA256 ba7fc829fac30949b7b48c5bb82955959561495d22517665271dcc2d043a7f63
+candidate 3: successes 62/64; mean failure-penalized steps 11027.921875; actual engine steps 660632; evaluator seconds 22.6413356680132; wall seconds 254.37229966700033; source SHA256 e20d6fcc696dbd64a0285d9a0e98264aa30579ba7b5cd83b85cf09a086a4fffa
+
+Total evaluated episodes: 192. Total actual engine steps: 2101413. Token usage was not supplied by the platform.
+
+Limitations: all adaptation used the same fixed training worlds; aggregate gains do not establish held-out transfer or isolate mechanisms. Recovery can still fail for unavailable resources or routes, and navigation remains coupled to fixed survival/provisioning priorities. closed.json exists with search_closed=true and validation_feedback_used=false; all authored/archive/result hashes were verified after round 3. No selected.py was written.

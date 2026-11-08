@@ -1,0 +1,695 @@
+// plan.tr: the plan area of the floor-8 strategy: strategic goals (kit, stocks
+// and attributes), the expedition/excursion goal runtime, floor-specific
+// entries and explorers, and the floor-specific choices inside the generic
+// navigation and crafting skills. Translated from the target's
+// full_strategic.inc, sg_*.inc, goal_runtime.inc, m_nav.inc and m_build.inc.
+
+// ---------------------------------------------------------------- constants
+/* late (sg_late.inc): diamond gear from the Troll Mines on. */
+const SGL_TROLL = 0;          /* cleared Troll Mines, before Fire is seen */
+const SGL_TROLL_BUDGET = 1500;/* steps of plate work per troll phase */
+const SGL_TROLL_RADIUS = 200; /* known-diamond radius (steps) */
+const SGL_PROSPECT = 1;       /* light unseen rock for diamonds */
+const SGL_RESERVE = 20;       /* torches kept for Ice */
+const SGL_PROBE_RESERVE = 10; /* probe torch reserve in the troll phase (Fire restocks) */
+const SGL_RESERVE_LATE = 12;  /* probe torch reserve on the gem trip and Ice excursions */
+const SGL_GAIN = 20;          /* light_unseen min gain / max cost */
+const SGL_COST = 600;
+const SGL_IRONPICK = 1;       /* also with an iron pickaxe (diamonds need only iron) */
+const SGL_PROBE = 1;          /* tunnel into dark rock and light it (dark_probe) */
+const SGL_PROBE_GAIN = 30;
+const SGL_PROBE_COST = 400;
+const SGL_TORCHES = 0;        /* craft torches from carried wood and coal below this */
+const SGL_FIRE = 1;           /* the Fire->Troll gem trip's mines stay (fire phase) */
+const SGL_ICE = 1;            /* Troll Mines visits of Ice excursions */
+const SGL_ICE_MIN_DIA = 0;    /* Ice-excursion visits: diamonds in hand to enter */
+const SGL_ICE_BUDGET2 = 0;    /* visit budget when a plate is one diamond away */
+const SGL_ICE_BUDGET = 400;   /* plate-goal steps per mines visit (Ice excursions) */
+const SGL_ICETRIP = 0;        /* dedicated plate trip from Ice back to the Troll Mines */
+const SGL_ICETRIP_MIN = 2;
+const SGL_ICETRIP_MAX = 1;
+const SGL_ICETRIP_BUDGET = 1500;
+const SGL_ICEFLOOR = 0;       /* on Ice: fetch known Ice diamonds that complete a plate */
+const SGL_ICEFLOOR_R = 150;
+const SGL_PLATE_FIRST = 0;    /* troll phase, iron pickaxe: plates before the diamond pickaxe */
+const SGL_PF_ARMOUR = 6;
+const SGL_PROBE_MIN_DIA = 0;  /* probe only with this many diamonds in hand */
+const SGL_WEAPON2 = 0;        /* troll phase, iron pickaxe: WEAPON2 = the diamond pickaxe */
+const SGL_W2_CLEAR = 0;
+const SGL_W2_RADIUS = 150;
+const SGL_W2_BUDGET = 1500;
+const SGL_PLATES_ONLY = 0;
+/* Plate-goal modes (frame local[0]). */
+const SGL_M_TROLL = 0; const SGL_M_FIRE = 1; const SGL_M_ICE = 2; const SGL_M_ICEF = 3;
+/* kit (sg_kit.inc): chest looting on the Sewers ice-enchant trip. */
+const KIT_LOOT = 24;          /* floors (bits): Sewers 3, Vault 4 */
+const KIT_LOOT_STEPS = 800;   /* per floor, over all visits */
+/* Shared with floor8.tr. */
+const ICETRIP_DIA_GAIN = 16;
+const ICETRIP_DIA_PATH = 400;
+const ICETRIP_DIA_STEPS = 250;
+
+// ======================================================== strategic goals
+/* Strategic goal runtime (benchmarks/strategic_goals).
+ *
+ * A strategic goal targets the agent's kit, stocks or attributes (full
+ * diamond armour, ice-enchanted plates, a stock of torches), not a floor
+ * milestone. A selector calls it (sg_call) when its entry predicate holds; it
+ * persists across floors, survival interrupts and excursions (the rules above
+ * r_strategic preempt it for a step); after each observation, sg_boundary
+ * returns it completed or abandoned by its own predicates, or on death,
+ * horizon budget or floor 8. A goal never decides by itself that it
+ * succeeded: completion is observed.
+ *
+ * Each module (early, late, kit) owns some kinds of SG_* and defines, for
+ * each, complete(k), abandon(k) and act(k, skill) over the frame index k
+ * (a.strat.frame[k]), and one selector. Selectors run in the order early,
+ * late, kit while no goal is active; one strategic goal is active at a time
+ * (children may nest up to SG_DEPTH). */
+
+/* Is kind one that a module defines? */
+def int sg_kind_ok(int kind) {
+ return kind==SG_ARMOUR2 || kind==SG_PROSPECT2 || kind==SG_WEAPON2 || kind==SG_STOCK || kind==SG_X2;
+}
+def int sg_active(int kind) {
+ for(int i=0;i<a.strat.depth;i++)if(a.strat.frame[i].kind==kind)return 1;
+ return 0;
+}
+/* Call a goal: target and budget (steps, 0 = none) are the goal's own. */
+def int sg_call(int kind,int target,int budget) {
+ if(kind<=SG_NONE || kind>=SG_KINDS || a.strat.depth>=SG_DEPTH)return 0;
+ int d=a.strat.depth;
+ clear(a.strat.frame[d]);
+ a.strat.frame[d].kind=kind;
+ a.strat.next_id++;
+ a.strat.frame[d].id=a.strat.next_id;
+ a.strat.frame[d].parent=d?a.strat.frame[d-1].id:0;
+ a.strat.frame[d].target=target;a.strat.frame[d].budget=budget;
+ a.strat.frame[d].entry_t=a.t;a.strat.frame[d].entry_level=o.level;
+ a.strat.frame[d].in.level=o.level;a.strat.frame[d].in.food=o.food;a.strat.frame[d].in.drink=o.drink;
+ a.strat.frame[d].in.energy=o.energy;a.strat.frame[d].in.health=o.health;
+ a.strat.depth++;a.strat.calls[kind]++;return 1;
+}
+def void sg_return(int outcome) {
+ if(!a.strat.depth)return;
+ a.strat.depth--;
+ int d=a.strat.depth,kind=a.strat.frame[d].kind;
+ a.strat.steps[kind]+=a.t-a.strat.frame[d].entry_t;
+ a.strat.last=a.strat.frame[d];
+ a.strat.last_outcome=outcome;a.strat.boundary_t=a.t;
+ a.strat.completions[kind]+=outcome==RO_COMPLETED;a.strat.abandonments[kind]+=outcome!=RO_COMPLETED;
+}
+def void sg_finish(int outcome) { while(a.strat.depth)sg_return(outcome); }
+
+// ------------------------------------------------- module "early" (empty)
+def int sg_early_select() { return 0; }
+
+// ------------------------------------------------------------ module "late"
+/* Diamond gear from the Troll Mines on. Region: a.floors[5].seen. Kinds:
+ * SG_ARMOUR2 (one more diamond plate), SG_WEAPON2 (unused), SG_PROSPECT2.
+ *
+ * ARMOUR2 (target: armour value + 1, i.e. one more diamond plate)
+ *  entry   floor 5 seen, on floor 5, armour < 8, a diamond-capable pickaxe,
+ *          healthy and supplied, no troll near, the phase's step budget
+ *          left, and an opportunity: three diamonds in hand, a known diamond
+ *          within reach, or (where prospecting is allowed) unseen rock and
+ *          torches above the reserve kept for dark Ice.
+ *  done    observed: armour value >= target.
+ *  abandon budget (steps per call), the phase budget spent, left floor 5,
+ *          hazard (health, food, drink, energy), or nothing left to mine or
+ *          light (set by the policy when no action is found).
+ *  policy  craft a plate at three diamonds (walking to any known table),
+ *          mine the nearest known diamond within the mode's radius, light
+ *          the placement that shows the most unseen cells near the route
+ *          while torches exceed the reserve.
+ * Constant switches select the phases where the goal is eligible. */
+def int sgl_plate_first() {
+ return SGL_PLATE_FIRST && a.floors[5].seen && !a.floors[6].seen && wm_armour()<SGL_PF_ARMOUR;
+}
+def int sgl_phase() { return a.floors[7].seen?SGL_M_ICE:a.floors[6].seen?SGL_M_FIRE:SGL_M_TROLL; }
+def int sgl_healthy() {
+ return o.health>6.5f && o.food>3 && o.drink>3 && o.energy>3 && !wm_melee_within(6);
+}
+/* Known diamonds on this floor (memory). */
+def int sgl_known() { return known_count(DIAMOND); }
+/* Incumbent trips that rank above its gear rules: enchant the sword or the
+ * armour at a Vault/Sewers table. The plate goal yields to them. */
+def int sgl_trip_pending() {
+ if(o.xp || o.inv[I_BOOK])return 1;
+ if(enchant_trip())return 1;
+ if(a.floors[5].seen && !a.floors[6].seen && !o.sword_enchant && o.inv[I_RUBY]>0 && vault_trip_ok())return 1;
+ if(a.floors[5].seen && !a.floors[6].seen && !o.sword_enchant && o.inv[I_SAPPHIRE]>0 && a.vault_search<600)return 1;
+ int fp=0;for(int i=0;i<4;i++)fp+=o.armour_enchant[i]==1;
+ if(!a.floors[7].seen && wm_armour() && fp<4 && o.inv[I_RUBY]>0 && o.inv[I_RUBY]>=4-fp && vault_trip_ok())return 1;
+ return 0;
+}
+def int sgl_reserve(int k) { return a.strat.frame[k].local[0]==SGL_M_TROLL?SGL_PROBE_RESERVE:SGL_RESERVE_LATE; }
+/* After a call found nothing to do, re-enter only once something changed:
+ * more diamonds known or in hand, or more torches. */
+def void sgl_idle() {
+ a.sgl_retry_t=a.t+100;a.sgl_pad[0]=sgl_known()+1;a.sgl_pad[1]=o.inv[I_DIAMOND]+1;a.sgl_pad[2]=o.inv[I_TORCH]+1;a.sgl_pad[3]=a.level+1;
+}
+def int sgl_idle_now() {
+ if(a.t<a.sgl_retry_t)return 1;
+ return a.sgl_pad[3]==a.level+1 && sgl_known()+1<=a.sgl_pad[0] && o.inv[I_DIAMOND]+1<=a.sgl_pad[1] && o.inv[I_TORCH]+1<=a.sgl_pad[2];
+}
+/* Budgets and hazards shared by the plate goal and its prospecting child. */
+def int sgl_ice_budget() {
+ return SGL_ICE_BUDGET2 && o.inv[I_DIAMOND]%3==2?SGL_ICE_BUDGET2:SGL_ICE_BUDGET;
+}
+def int sgl_spent_out(int k) {
+ int mode=a.strat.frame[k].local[0];
+ if(o.health<=5 || o.food<=2 || o.drink<=2 || o.energy<=2)return 1;
+ if(mode==SGL_M_TROLL && a.sgl_spent[SGL_M_TROLL]>=SGL_TROLL_BUDGET)return 1;
+ if(mode==SGL_M_FIRE && a.fire_dia>=3500)return 1;
+ if(mode==SGL_M_ICE && !a.strat.frame[k].local[4] && a.sgl_spent[SGL_M_ICE]>=sgl_ice_budget())return 1;
+ return 0;
+}
+/* PROSPECT2: one more diamond known on this floor (target: known count),
+ * by tunnelling into dark rock and lighting it. Abandoned when the torches
+ * reach the reserve, nothing is left to probe, off floor 5, or on the
+ * parent's budgets and hazards. (local[5]: the shelter-light mode, unused.) */
+def int sgl_prospect_complete(int k) {
+ if(a.strat.frame[k].local[5])return o.inv[I_TORCH]<a.strat.frame[k].target;
+ return o.level==5 && a.level==5 && sgl_known()>=a.strat.frame[k].target;
+}
+def int sgl_prospect_abandon(int k) {
+ if(a.strat.frame[k].local[5])return 1; /* shelter light: one step (budget 1) */
+ return a.strat.frame[k].local[1] || o.level!=5 || o.inv[I_TORCH]<=sgl_reserve(k) || sgl_spent_out(k);
+}
+def int sgl_prospect_act(int k, out int skill) {
+ if(a.strat.frame[k].local[5])return -1;
+ if(a.level!=5 || wm_hostile_within(5) || o.health<=6.5f || sgl_trip_pending())return -1;
+ int mode=a.strat.frame[k].local[0];
+ a.sgl_spent[mode]++;if(mode==SGL_M_FIRE)a.fire_dia++;
+ /* A freshly opened gap first (it lights more than any cave placement). */
+ int act=light_unseen(SGL_PROBE_GAIN,40);
+ if(act<0)act=dark_probe(SGL_PROBE_GAIN,SGL_PROBE_COST);
+ if(act>=0){a.strat.frame[k].local[3]++;skill=LIGHT;return act;}
+ /* Nothing left to probe: this child and its plate goal end. */
+ a.sgl_spent[mode]--;if(mode==SGL_M_FIRE)a.fire_dia--;
+ a.strat.frame[k].local[1]=1;sgl_idle();
+ int d=a.strat.depth;
+ if(d>=2 && (a.strat.frame[d-2].kind==SG_ARMOUR2 || a.strat.frame[d-2].kind==SG_WEAPON2))
+  a.strat.frame[d-2].local[1]=1;
+ return -1;
+}
+def int sgl_armour_complete(int k) { return wm_armour()>=a.strat.frame[k].target; }
+def int sgl_armour_abandon(int k) {
+ if(a.strat.frame[k].local[1])return 1;
+ if(a.strat.frame[k].local[0]==SGL_M_ICEF)return o.level!=7 || o.health<=6 || o.food<=2 || o.drink<=2 || o.energy<=2;
+ if(a.strat.frame[k].local[4]){if(o.level<5 || o.level>7)return 1;}
+ else if(o.level!=5)return 1;
+ return sgl_spent_out(k);
+}
+def int sgl_armour_act(int k, out int skill) {
+ int mode=a.strat.frame[k].local[0],trip=a.strat.frame[k].local[4];
+ if(trip && (a.level==6 || a.level==7)) {
+  /* The trip: up through Fire to the mines (survival rules preempt). */
+  int act=travel(0);if(act<0){a.strat.frame[k].local[1]=1;return -1;}
+  skill=TRAVEL;return act;
+ }
+ if(mode==SGL_M_ICEF) {
+  /* Ice: walk to known Ice diamonds that complete a plate, craft it. */
+  if(a.level!=7 || wm_hostile_within(6) || o.health<=8 || sgl_trip_pending())return -1;
+  int act=-1;
+  if(o.inv[I_DIAMOND]>=3){act=craft_radius(DIAMOND_ARMOUR,3000);if(act>=0){skill=CRAFT;return act;}}
+  act=seek_block(DIAMOND,SGL_ICEFLOOR_R);if(act>=0){skill=GATHER;return act;}
+  a.strat.frame[k].local[1]=1;sgl_idle();return -1;
+ }
+ if(a.level!=5)return -1;
+ /* Yield to the incumbent while anything hostile is close: fights, heals
+  * and drinking sit above this hook and the next step returns here. */
+ if(wm_hostile_within(5) || o.health<=6.5f)return -1;
+ /* XP, books and the incumbent's enchant trips go first. */
+ if(sgl_trip_pending())return -1;
+ a.sgl_spent[mode]++;
+ if(mode==SGL_M_FIRE)a.fire_dia++;
+ int act=-1;
+ /* An iron pickaxe with wood: the incumbent turns three diamonds into the
+  * diamond pickaxe (gems for enchantments) before plates. */
+ if(o.inv[I_PICK]<4 && o.inv[I_DIAMOND]>=3 && o.inv[I_WOOD]>=1 && !sgl_plate_first()){a.sgl_spent[mode]--;return -1;}
+ if(o.inv[I_DIAMOND]>=3 && wm_armour()<8) {
+  act=craft_radius(DIAMOND_ARMOUR,3000);
+  if(act>=0){skill=CRAFT;return act;}
+ }
+ act=seek_block(DIAMOND,trip?150:mode==SGL_M_ICE?50:mode==SGL_M_FIRE?100:SGL_TROLL_RADIUS);
+ if(act>=0){skill=GATHER;return act;}
+ /* The gem trip also wants sapphires (the incumbent's order). */
+ if(mode==SGL_M_FIRE && o.inv[I_SAPPHIRE]<4 && o.inv[I_PICK]>=4) {
+  act=seek_block(SAPPHIRE,100);if(act>=0){skill=GATHER;return act;}
+ }
+ if(mode==SGL_M_FIRE && o.inv[I_TORCH]<20 && o.inv[I_COAL]>=1 && o.inv[I_WOOD]>=1) {
+  act=craft_radius(MAKE_TORCH,250);if(act>=0){skill=CRAFT;return act;}
+ }
+ if(SGL_TORCHES && o.inv[I_TORCH]<SGL_TORCHES && o.inv[I_WOOD]>=1 && o.inv[I_COAL]>=1) {
+  act=craft_radius(MAKE_TORCH,250);
+  if(act>=0){skill=CRAFT;return act;}
+ }
+ /* Cave lighting as each phase's incumbent rule does it. */
+ if(mode==SGL_M_FIRE && o.inv[I_TORCH]>8) {
+  act=light_unseen(20,600);if(act>=0){a.strat.frame[k].local[2]++;skill=LIGHT;return act;}
+ }
+ if(trip && o.inv[I_TORCH]>=12) {
+  act=light_unseen(ICETRIP_DIA_GAIN,600);if(act>=0){a.strat.frame[k].local[2]++;skill=LIGHT;return act;}
+ }
+ if(mode==SGL_M_ICE && !trip && o.inv[I_TORCH]>=12 && a.icetrip_prospect<ICETRIP_DIA_STEPS) {
+  a.icetrip_prospect++;
+  act=light_unseen(ICETRIP_DIA_GAIN,ICETRIP_DIA_PATH);if(act>=0){a.strat.frame[k].local[2]++;skill=LIGHT;return act;}
+ }
+ if(mode==SGL_M_TROLL && SGL_PROSPECT && o.inv[I_TORCH]>SGL_RESERVE) {
+  act=light_unseen(SGL_GAIN,SGL_COST);
+  if(act>=0){a.strat.frame[k].local[2]++;skill=LIGHT;return act;}
+ }
+ /* Nothing known within reach and the cave is lit: find a diamond in dark
+  * rock (child goal PROSPECT2). */
+ if(SGL_PROBE && o.inv[I_DIAMOND]%3>=SGL_PROBE_MIN_DIA && o.inv[I_TORCH]>sgl_reserve(k) && sg_call(SG_PROSPECT2,sgl_known()+1,0)) {
+  int c=a.strat.depth-1;
+  a.strat.frame[c].local[0]=mode;a.strat.frame[c].local[4]=trip;
+  a.sgl_spent[mode]--;if(mode==SGL_M_FIRE)a.fire_dia--;
+  a.strat.frame[k].local[3]++;return sgl_prospect_act(c,skill);
+ }
+ /* Nothing to craft, mine or light: the goal ends (observed next boundary). */
+ a.strat.frame[k].local[1]=1;a.sgl_spent[mode]--;sgl_idle();
+ return -1;
+}
+/* WEAPON2: the diamond pickaxe in the Troll Mines (target: pickaxe level 4).
+ * Policy: craft at three diamonds (walking to any known table), mine known
+ * diamonds within SGL_W2_RADIUS, else find one in dark rock (PROSPECT2 child,
+ * troll reserve). Abandoned: no wood for the pickaxe, the phase budget,
+ * hazard, off floor 5, nothing left to mine or probe. Completion observed:
+ * pickaxe level 4. (Off: SGL_WEAPON2.) */
+def int sgl_w2_complete(int k) { return o.inv[I_PICK]>=4; }
+def int sgl_w2_abandon(int k) {
+ return a.strat.frame[k].local[1] || o.level!=5 || o.inv[I_WOOD]<1 || sgl_spent_out(k);
+}
+def int sgl_w2_act(int k, out int skill) {
+ if(a.level!=5 || wm_hostile_within(5) || o.health<=6.5f || sgl_trip_pending())return -1;
+ a.sgl_spent[SGL_M_TROLL]++;
+ int act=-1;
+ if(o.inv[I_DIAMOND]>=3){act=craft_radius(DIAMOND_PICK,3000);if(act>=0){skill=CRAFT;return act;}}
+ act=seek_block(DIAMOND,SGL_W2_RADIUS);if(act>=0){skill=GATHER;return act;}
+ if(SGL_PROBE && o.inv[I_TORCH]>SGL_PROBE_RESERVE && sg_call(SG_PROSPECT2,sgl_known()+1,0)) {
+  int c=a.strat.depth-1;a.strat.frame[c].local[0]=SGL_M_TROLL;a.sgl_spent[SGL_M_TROLL]--;
+  return sgl_prospect_act(c,skill);
+ }
+ a.strat.frame[k].local[1]=1;a.sgl_spent[SGL_M_TROLL]--;sgl_idle();return -1;
+}
+def int sg_late_select() {
+ if(!a.floors[5].seen)return 0;
+ /* Ice: a dedicated plate trip when a plate is one diamond away. */
+ if(SGL_ICETRIP && a.level==7 && o.level==7 && a.sgl_trip<SGL_ICETRIP_MAX && wm_armour()<8 && o.inv[I_PICK]>=3 &&
+    o.inv[I_DIAMOND]>=SGL_ICETRIP_MIN && !enchant_trip() && o.health>=8+o.str-1.01f && o.food>=6 && o.drink>=6 &&
+    o.energy>=5 && o.inv[I_TORCH]>=12 && !wm_hostile_within(6) && a.floors[7].up>=0 && a.floors[6].up>=0) {
+  if(!sg_call(SG_ARMOUR2,wm_armour()+1,SGL_ICETRIP_BUDGET))return 0;
+  a.strat.frame[a.strat.depth-1].local[0]=SGL_M_ICE;a.strat.frame[a.strat.depth-1].local[4]=1;a.sgl_trip++;return 1;
+ }
+ if(SGL_ICEFLOOR && a.level==7 && o.level==7 && wm_armour()<8 && o.inv[I_PICK]>=3 && o.health>8 && o.food>3 && o.drink>3 &&
+    o.energy>3 && !wm_hostile_within(6) && !enchant_trip() && o.inv[I_DIAMOND]+sgl_known()>=3 && !sgl_idle_now()) {
+  if(!sg_call(SG_ARMOUR2,wm_armour()+1,400))return 0;
+  a.strat.frame[a.strat.depth-1].local[0]=SGL_M_ICEF;return 1;
+ }
+ if(a.level!=5 || o.level!=5)return 0;
+ if(wm_armour()>=8 || o.inv[I_PICK]<(SGL_IRONPICK?3:4) || !sgl_healthy())return 0;
+ int phase=sgl_phase();
+ if(phase==SGL_M_TROLL) {
+  if(SGL_WEAPON2 && o.inv[I_PICK]==3 && o.inv[I_WOOD]>=1 && (o.clear || !SGL_W2_CLEAR) &&
+     a.sgl_spent[SGL_M_TROLL]<SGL_W2_BUDGET && !sgl_idle_now() && o.health>=8+o.str-1.01f) {
+   if(!sg_call(SG_WEAPON2,4,0))return 0;
+   a.strat.frame[a.strat.depth-1].local[0]=SGL_M_TROLL;return 1;
+  }
+  if(!SGL_TROLL || !o.clear || a.sgl_spent[SGL_M_TROLL]>=SGL_TROLL_BUDGET)return 0;
+  /* A plate needs a table: a known one on this floor or two wood. */
+  if(SGL_PLATES_ONLY && o.inv[I_DIAMOND]+sgl_known()<3)return 0;
+  /* Once this call gave up (nothing to mine or light), do not re-enter
+   * until something new is known. */
+  if(sgl_idle_now())return 0;
+  if(!sg_call(SG_ARMOUR2,wm_armour()+1,0))return 0;
+  a.strat.frame[a.strat.depth-1].local[0]=SGL_M_TROLL;return 1;
+ }
+ if(phase==SGL_M_FIRE) {
+  /* The gem trip's mines stay (incumbent: fire_prep, rule "Prospecting"):
+   * same entry, plus dark-rock probing once the cave offers nothing. */
+  if(!SGL_FIRE || !o.clear || a.fire_dia>=3500 || sgl_idle_now())return 0;
+  if(o.health<8+o.str-1.01f || o.drink<5 || o.food<4 || o.energy<4)return 0;
+  if(!sg_call(SG_ARMOUR2,wm_armour()+1,0))return 0;
+  a.strat.frame[a.strat.depth-1].local[0]=SGL_M_FIRE;return 1;
+ }
+ if(phase==SGL_M_ICE && icetrip()) {
+  /* Mines visits of Ice excursions (incumbent: ICETRIP_DIA). The visit
+   * budget restarts on each arrival from Fire. */
+  if(!SGL_ICE || sgl_idle_now())return 0;
+  if(a.sgl_trip_t!=a.floors[5].entered+1){a.sgl_trip_t=a.floors[5].entered+1;a.icetrip_prospect=0;a.sgl_spent[SGL_M_ICE]=0;}
+  /* Never during the incumbent's Ice->Sewers ice-enchant trip (the goal
+   * would only yield to it; kit's chest looting relies on that trip). */
+  if(a.sgl_spent[SGL_M_ICE]>=sgl_ice_budget() || o.health<8 || o.inv[I_DIAMOND]<SGL_ICE_MIN_DIA || enchant_trip())return 0;
+  if(!sg_call(SG_ARMOUR2,wm_armour()+1,0))return 0;
+  a.strat.frame[a.strat.depth-1].local[0]=SGL_M_ICE;return 1;
+ }
+ return 0;
+}
+
+// ------------------------------------------------------------- module "kit"
+/* The rest of the kit, all floors; never diamond mining or armour/weapon
+ * crafting. Two goals, both on the Sewers ice-enchant trip that every Ice
+ * entrant with sapphires makes (enchant_trip: Ice -> Fire -> Troll Mines ->
+ * Vault -> Sewers and back down).
+ *  STOCK ("loot"): open the chests that the first descent left in the
+ *        Sewers (floor 3) and the Vault (floor 4).
+ *  X2 ("farloot"): once the Sewers are looted and the ice enchanting is
+ *        over, climb to the Dungeon (floor 1), loot it, and come back to the
+ *        Sewers; the incumbent then descends to Ice as before.
+ * STOCK. Entry: Ice seen, on the Sewers or the Vault, floor clear, health at
+ * least max-1, food, drink and energy at least 4, nothing hostile within 6,
+ * less than KIT_LOOT_STEPS spent looting this floor. Completion: no known
+ * chest within 60 path steps and no frontier stand reachable. Abandonment:
+ * left the floor; hazard; the floor's budget spent. Policy: walk to the
+ * nearest known chest and open it, else walk to the best frontier stand.
+ * X2. Entry: Ice seen, on the Sewers, the ice enchanting over, the Sewers
+ * budget closed, the Dungeon budget open, the ladders of floors 1-3 known,
+ * healthy and supplied, nothing hostile within 6, not taken before.
+ * Completion: back on the Sewers after the Dungeon was looted. Abandonment:
+ * 4,000 steps. Both yield a step while the WM predicts incoming damage. */
+def int kit_loot_safe(int entry) {
+ if(entry)return o.health>=8+o.str-1.01f && o.food>=4 && o.drink>=4 && o.energy>=4 && !wm_hostile_within(6);
+ return o.health>=6 && o.food>3 && o.drink>3 && o.energy>=2 && !wm_hostile_within(4);
+}
+def int kit_loot_entry() {
+ if(!a.floors[7].seen)return 0;
+ return ((KIT_LOOT>>o.level)&1) && o.clear && a.kit_loot_steps[o.level]<KIT_LOOT_STEPS && kit_loot_safe(1);
+}
+def int kit_loot_complete(int k) { return a.strat.frame[k].local[0]==1; }
+def int kit_loot_abandon(int k) {
+ return o.level!=a.strat.frame[k].entry_level || !kit_loot_safe(0) || a.kit_loot_steps[o.level]>=KIT_LOOT_STEPS;
+}
+def int kit_loot_act(int k, out int skill) {
+ if(wm_incoming_damage(NOOP)>0)return -1;
+ a.kit_loot_steps[o.level]++;
+ int act=seek_block(CHEST,60);if(act>=0){skill=LOOT;return act;}
+ act=frontier_walk();if(act>=0){skill=EXPLORE;return act;}
+ /* Nothing left: the floor is done for good. */
+ a.strat.frame[k].local[0]=1;a.kit_loot_steps[o.level]=KIT_LOOT_STEPS;return -1;
+}
+def int kit_far_entry() {
+ if(!a.floors[7].seen || a.kit_farloot || o.level!=3)return 0;
+ int ice=0;for(int i=0;i<4;i++)ice+=o.armour_enchant[i]==2;
+ return a.floors[7].seen && !a.kit_farloot && o.level==3 && (ice>=4 || !o.inv[I_SAPPHIRE]) &&
+        a.kit_loot_steps[3]>=KIT_LOOT_STEPS && a.kit_loot_steps[1]<KIT_LOOT_STEPS &&
+        a.floors[3].up>=0 && a.floors[2].up>=0 && a.floors[2].down>=0 && a.floors[1].down>=0 &&
+        o.health>=8+o.str-1.01f && o.food>=6 && o.drink>=6 && o.energy>=5 && !wm_hostile_within(6);
+}
+def int kit_far_complete(int k) { return o.level==3 && a.strat.frame[k].local[1]==1; }
+def int kit_far_act(int k, out int skill) {
+ skill=TRAVEL;
+ if(a.strat.frame[k].local[1]==0) {
+  if(o.level>1)return travel(0);
+  if(o.level<1)return travel(1);
+  if(wm_incoming_damage(NOOP)>0)return -1;
+  if(a.kit_loot_steps[1]<KIT_LOOT_STEPS) {
+   a.kit_loot_steps[1]++;
+   int act=seek_block(CHEST,60);if(act>=0){skill=LOOT;return act;}
+   act=frontier_walk();if(act>=0){skill=EXPLORE;return act;}
+   a.kit_loot_steps[1]=KIT_LOOT_STEPS;
+  }
+  a.strat.frame[k].local[1]=1;
+ }
+ if(o.level<3)return travel(1);
+ if(o.level>3)return travel(0);
+ return -1;
+}
+def void kit_far_update() {
+ if(a.kit_farloot==1 && !sg_active(SG_X2))a.kit_farloot=2;
+}
+def int sg_kit_select() {
+ kit_far_update();
+ if(kit_loot_entry())return sg_call(SG_STOCK,0,KIT_LOOT_STEPS);
+ if(kit_far_entry()){a.kit_farloot=1;return sg_call(SG_X2,0,4000);}
+ return 0;
+}
+
+// ------------------------------------------------------- goal dispatch
+def int sg_complete(int kind,int k) {
+ if(kind==SG_ARMOUR2)return sgl_armour_complete(k);
+ if(kind==SG_PROSPECT2)return sgl_prospect_complete(k);
+ if(kind==SG_WEAPON2)return sgl_w2_complete(k);
+ if(kind==SG_STOCK)return kit_loot_complete(k);
+ return kit_far_complete(k);
+}
+def int sg_abandon(int kind,int k) {
+ if(kind==SG_ARMOUR2)return sgl_armour_abandon(k);
+ if(kind==SG_PROSPECT2)return sgl_prospect_abandon(k);
+ if(kind==SG_WEAPON2)return sgl_w2_abandon(k);
+ if(kind==SG_STOCK)return kit_loot_abandon(k);
+ return 0; /* X2: budget only */
+}
+def int sg_act(int kind,int k, out int skill) {
+ if(kind==SG_ARMOUR2)return sgl_armour_act(k,skill);
+ if(kind==SG_PROSPECT2)return sgl_prospect_act(k,skill);
+ if(kind==SG_WEAPON2)return sgl_w2_act(k,skill);
+ if(kind==SG_STOCK)return kit_loot_act(k,skill);
+ return kit_far_act(k,skill);
+}
+
+/* Boundary: once after each observation (entry point observe), innermost
+ * goal first. */
+def void sg_boundary() {
+ if(o.health<=0){sg_finish(RO_DIED);return;}
+ if(o.level>=8){sg_finish(RO_STOPPED);return;}
+ while(a.strat.depth) {
+  int k=a.strat.depth-1,kind=a.strat.frame[k].kind;
+  if(!sg_kind_ok(kind)){sg_return(RO_STOPPED);continue;}
+  if(sg_complete(kind,k)){sg_return(RO_COMPLETED);continue;}
+  if((a.strat.frame[k].budget>0 && a.t-a.strat.frame[k].entry_t>=a.strat.frame[k].budget) || sg_abandon(kind,k)){sg_return(RO_ABANDONED);continue;}
+  break;
+ }
+}
+/* The strategic hook (rule r_strategic): below survival, above the
+ * incumbent's own gear, supply and descent rules. Returns an action or -1. */
+def int strategic(out int skill) {
+ if(!a.strat.depth) {
+  if(!sg_early_select())
+   if(!sg_late_select())sg_kit_select();
+ }
+ if(!a.strat.depth)return -1;
+ int k=a.strat.depth-1,kind=a.strat.frame[k].kind;
+ if(!sg_kind_ok(kind))return -1;
+ skill=EXPLORE;return sg_act(kind,k,skill);
+}
+
+// ================================================ expedition goal runtime
+/* The expedition/excursion goal runtime (a.runtime): an expedition frame is
+ * pushed at the first arrival on a floor from the Troll Mines on (frontier
+ * 5..7), excursions are called on departures upward (commit) and by the
+ * dark-entry repairs, and return on arrival back at the frontier. The C API
+ * keeps its own fp_goal_* (goal_runtime.inc) for C callers. */
+const EXPEDITION_FROM = 5;   /* first frontier with an expedition frame (the Troll Mines) */
+def void runtime_push(int kind,int frontier) {
+ int d=a.runtime.depth;
+ clear(a.runtime.frame[d]);
+ a.runtime.frame[d].kind=kind;a.runtime.frame[d].frontier=frontier;a.runtime.frame[d].entry_t=a.t;
+ a.runtime.frame[d].return_outcome=RO_COMPLETED;a.runtime.frame[d].in=a.runtime.observed;
+ a.runtime.next_id++;a.runtime.frame[d].id=a.runtime.next_id;
+ a.runtime.frame[d].parent=d?a.runtime.frame[d-1].id:0;
+ a.runtime.depth++;
+}
+def void fp_goal_return(int outcome) {
+ if(!a.runtime.depth)return;
+ a.runtime.depth--;
+ a.runtime.last_return=a.runtime.frame[a.runtime.depth];
+ a.runtime.last_outcome=outcome;a.runtime.boundary_t=a.t;
+ int e=a.runtime.returns%4;
+ a.runtime.event[e].frame=a.runtime.last_return;
+ a.runtime.event[e].out=a.runtime.observed;
+ a.runtime.event[e].exit_t=a.t;a.runtime.event[e].outcome=outcome;
+ a.runtime.returns++;a.runtime.completions+=outcome==RO_COMPLETED;a.runtime.abandonments+=outcome==RO_ABANDONED;
+ if(a.runtime.depth)a.runtime.frame[a.runtime.depth-1].suspended=0;
+}
+def void fp_goal_finish(int outcome) { while(a.runtime.depth)fp_goal_return(outcome); }
+def int fp_goal_call_excursion(int purpose,int mode,int target) {
+ if(a.runtime.depth!=1 || a.runtime.frame[0].kind!=RG_EXPEDITION)return 0;
+ a.runtime.frame[0].suspended=1;runtime_push(RG_EXCURSION,a.runtime.frame[0].frontier);
+ a.runtime.frame[1].purpose=purpose;a.runtime.frame[1].mode=mode;a.runtime.frame[1].target=target;return 1;
+}
+/* After each observation (entry point observe). */
+def void runtime_observe() {
+ int frontier=0;
+ for(int k=LEVELS-1;k>0;k--)if(a.floors[k].seen){frontier=k;break;}
+ if(o.level>frontier)frontier=o.level;
+ a.runtime.observed.level=o.level;a.runtime.observed.food=o.food;a.runtime.observed.drink=o.drink;
+ a.runtime.observed.energy=o.energy;a.runtime.observed.health=o.health;
+ if(o.health<=0){fp_goal_finish(RO_DIED);return;}
+ if(a.runtime.depth==2) {
+  if(o.level<a.runtime.frame[1].frontier)a.runtime.frame[1].departed=1;
+  if(a.runtime.frame[1].departed && o.level>=a.runtime.frame[1].frontier)fp_goal_return(a.runtime.frame[1].return_outcome);
+ }
+ if(a.runtime.depth && o.level>a.runtime.frame[0].frontier) {
+  if(a.runtime.depth==2)fp_goal_return(a.runtime.frame[1].return_outcome);
+  fp_goal_return(RO_COMPLETED);
+ }
+ if(!a.runtime.depth && frontier>=EXPEDITION_FROM && frontier<8) {
+  runtime_push(RG_EXPEDITION,frontier);
+  /* One-time migration of old banks captured inside an existing child. */
+  if(o.level<frontier){fp_goal_call_excursion(0,0,frontier);a.runtime.frame[1].departed=1;}
+ }
+}
+
+// ============================================== floor-specific navigation
+/* Dark-entry repair. A fully dark landing on floor L can face the map
+ * boundary. A blind torch then fails, while an unknown move would lose the
+ * local coordinate frame. Use the remembered ladder to reorient on the lit
+ * floor above (L-1) and return instead (an excursion of the given purpose).
+ * At most four headings and 120 total actions are allowed for this repair.
+ * The repair's state (headings tried, mode, deadline) is the caller's. */
+def int dark_entry(int L,int purpose,out int mask,out int mode,out int until) {
+ if(until && a.t>=until){mode=0;mask=30;return -1;}
+ if(a.level==L) {
+  int here=cell(a.r,a.c);
+  if(here!=a.floors[L].up || !o.inv[I_TORCH])return -1;
+  int unknown=0;for(int d=1;d<=4;d++)unknown+=block(a.r+dr[d],a.c+dc[d])==UNKNOWN;
+  if(unknown<4){mode=0;return -1;}
+  if(mask==30)return -1;
+  if(!until) {
+   if(a.previous.level!=L || a.previous_action!=NOOP || a.skill!=EXPLORE)return -1;
+   until=a.t+120;
+  }
+  if(a.previous.level==L && a.previous_action==PLACE_TORCH && o.inv[I_TORCH]>=a.previous.inv[I_TORCH])mask|=1<<o.dir;
+  if(!(mask&(1<<o.dir)))return PLACE_TORCH;
+  if(mask==30)return -1;
+  mode=-1;
+  if(fp_goal_call_excursion(purpose,0,a.floors[L].up))a.runtime.frame[1].return_outcome=RO_ABANDONED;
+  return ASCEND;
+ }
+ int U=L-1;
+ if(a.level!=U || !mode)return -1;
+ if(o.food<=1 || o.drink<=1 || o.energy<=1){mode=0;mask=30;return -1;}
+ int down=a.floors[U].down,here=cell(a.r,a.c);
+ if(down<0)return -1;
+ if(mode<0) {
+  int best=0,score=INF;
+  for(int d=1;d<=4;d++)if(!(mask&(1<<d))) {
+   int fr=down/SIDE+dr[d],fc=down%SIDE+dc[d],pr=down/SIDE-dr[d],pc=down%SIDE-dc[d];
+   if(!inside(fr,fc) || !inside(pr,pc))continue;
+   int front=block(fr,fc),partner=cell(pr,pc),cost=INF;
+   if(front!=UNKNOWN && front!=INVALID && !walkable(front))cost=path_dist(down)+10;
+   else if(walkable(block(pr,pc)) && !mob_at(partner))cost=path_dist(partner)+10;
+   if(cost<=80 && cost<score){best=d;score=cost;}
+  }
+  if(!best){mode=0;mask=30;return -1;}
+  mode=best;
+  if(a.runtime.depth==2 && a.runtime.frame[1].purpose==purpose)a.runtime.frame[1].mode=best;
+ }
+ int d=mode;
+ if(here==down && o.dir==d) {
+  if(a.runtime.depth==2 && a.runtime.frame[1].purpose==purpose)a.runtime.frame[1].return_outcome=RO_COMPLETED;
+  return DESCEND;
+ }
+ int fr=down/SIDE+dr[d],fc=down%SIDE+dc[d],pr=down/SIDE-dr[d],pc=down%SIDE-dc[d];
+ if(here==down && block(fr,fc)!=UNKNOWN && block(fr,fc)!=INVALID && !walkable(block(fr,fc)))return d;
+ int partner=cell(pr,pc);
+ if(here==partner)return d;
+ if(path_dist(partner)<INF)return move_path(partner);
+ mode=0;mask=30;return -1;
+}
+/* The Troll Mines (dark, below the Vault) in the troll phase. */
+def int troll_dark_entry() {
+ if(!a.floors[5].seen || a.floors[6].seen)return -1;
+ int mask=a.troll_dark_mask,mode=a.troll_dark_mode,until=a.troll_dark_until;
+ int act=dark_entry(5,41,&mask,&mode,&until);
+ a.troll_dark_mask=mask;a.troll_dark_mode=mode;a.troll_dark_until=until;
+ return act;
+}
+/* Ice (dark, below Fire) until the Graveyard is seen. */
+def int ice_dark_entry() {
+ if(!a.floors[7].seen || a.floors[8].seen)return -1;
+ int mask=a.ice_dark_mask,mode=a.ice_dark_mode,until=a.ice_dark_until;
+ int act=dark_entry(7,40,&mask,&mode,&until);
+ a.ice_dark_mask=mask;a.ice_dark_mode=mode;a.ice_dark_until=until;
+ return act;
+}
+
+const TB3 = 1; const TB17 = 0;
+/* Troll Mines: explore() sees frontiers within 60 steps only; in the dark it
+ * returned NOOP for 85,000 steps (ep 268: unlit cells all round, 45 torches
+ * unused). Light the nearest unseen cells, or walk to any frontier.
+ * Exit search on the cleared floor: the long-phase runs start it with 27
+ * torches and spend them all without finding the ladder, most on small
+ * walking-rule gains. Spend each torch where it lights the most unseen
+ * cells; the exit comes before Ice's torch stock. */
+def int troll_explore() {
+ if(TB21 && a.level==5 && troll_phase() && o.clear && a.floors[5].down<0 && o.inv[I_TORCH]>0) {
+  int alt=light_unseen(30,800);if(alt>=0)return alt;
+ }
+ if(TB17 && a.level==5 && troll_phase() && o.inv[I_TORCH]>12) {
+  int alt=light_unseen(25,300);if(alt>=0)return alt;
+ }
+ int act=explore();
+ if(!TB3 || act!=NOOP || a.level!=5 || !troll_phase())return act;
+ int alt=light_unseen(4,2500);if(alt>=0)return alt;
+ alt=frontier_walk();return alt>=0?alt:act;
+}
+/* Graveyard (floor 8): light the nearest placement that reveals enough
+ * unseen cells (light_behind: approached from behind for the facing). */
+def int graveyard_light() { return light_behind(GRAVEYARD_TORCH_GAIN,150); }
+
+// ================================================= floor-specific building
+/* Shallow floors below the Overworld: a table counts within 80 steps, not 25.
+ * At 25 the iron-armour craft and the descent alternated every step for
+ * 23,000 steps (arrive2 ep 53): one step towards the iron put the table at
+ * 26, the craft then wanted two wood for a new table, the mines have none,
+ * it gave up and the descent stepped back. New tables also cost 2 of the
+ * ~80 trees a world has (9 wood per Mines visit went into tables). */
+def int craft(int action) {
+ return craft_radius(action,!a.floors[3].seen && a.level>=1?800:250);
+}
+/* Ice wood: Ice shrubs are walkable, harvested from behind (harvest_walkable). */
+def int ice_wood() { return harvest_walkable(ICE_SHRUB,TREE,500); }
+
+/* COAL: the Gnomish Mines are dark; torches (1 wood + 1 coal -> 4) are how the program finds the diamonds of
+ * the diamond sword and the iron of the armour. 58% of the Sewers arrivals that still carry an iron sword hold
+ * at most 2 torches (most 0) and no coal, 88% of those with an empty armour slot and wood in hand: the light
+ * ran out and the timed descent followed (c1dev arrive3; Sewers pass .78 vs .99 with a diamond sword).
+ * Entry   Sewers not seen, on the Gnomish Mines, floor clear, torches <= 2, no coal, an iron sword or an empty
+ *         armour slot, 2+ wood, no hostile within 4, health >= 6, never taken before.
+ * Policy  raise the incumbent's resupply flag (it climbs to the Overworld); there, mine coal (known within 300)
+ *         and craft torches until CB_COAL_TORCH torches and 3 coal per empty slot are in hand.
+ * Done    on the Overworld with that stock; abandon after CB_COAL_BUDGET steps on the Overworld. */
+const CB_COAL = 1; const CB_COAL_TORCH = 20; const CB_COAL_BUDGET = 1500;
+def int cb_coaltrip(out int skill) {
+ if(!CB_COAL || a.floors[3].seen)return -1;
+ int empty=0;for(int i=0;i<4;i++)empty+=o.armour[i]==0;
+ if(a.cb_coal==0) {
+  if(a.level==2 && o.clear && o.inv[I_TORCH]<=2 && o.inv[I_COAL]==0 && (o.inv[I_SWORD]<4 || empty) &&
+     o.inv[I_WOOD]>=2 && !wm_hostile_within(4) && o.health>=6 && !a.resupplying) {
+   a.cb_coal=1;a.cb_coal_t=-1;a.resupplying=1;a.resupply_tick=a.t;
+  }
+  return -1;
+ }
+ if(a.cb_coal!=1)return -1;
+ if(a.level!=0){a.resupplying=1;return -1;}   /* the incumbent's resupply rule climbs */
+ if(a.cb_coal_t<0)a.cb_coal_t=a.t;
+ int coal_need=3*empty;if(coal_need>9)coal_need=9;
+ if((o.inv[I_TORCH]>=CB_COAL_TORCH && o.inv[I_COAL]>=coal_need) || a.t-a.cb_coal_t>CB_COAL_BUDGET){a.cb_coal=2;return -1;}
+ a.resupplying=1;
+ int act=-1;
+ if(o.inv[I_TORCH]<CB_COAL_TORCH && o.inv[I_COAL]>coal_need && o.inv[I_WOOD]>=2){act=craft(MAKE_TORCH);skill=CRAFT;}
+ if(act<0 && o.inv[I_PICK]>=1){act=seek_block(COAL,300);skill=GATHER;}
+ if(act<0 && o.inv[I_WOOD]<4){act=seek_block(TREE,300);skill=GATHER;}
+ if(act<0){act=frontier_walk();skill=EXPLORE;}
+ return act;
+}
+
+// ============================================ queries of the generic skills
+/* explore() (I): on Fire in the fire phase, the exit search (fire_search:
+ * stands that reveal unseen in-map terrain, at any distance) runs first. */
+def int explore_fire_search() { return a.level==6 && fire_phase(); }
+/* explore() (I): long elemental excursions (Fire, Ice) consume scarce
+ * supplies; prefer closer frontiers (frontier bonus x0.75). */
+def int explore_prefer_near() { return a.level>=6; }
+/* fire_search (I): the stands of its first pass are those the drink left can
+ * reach and return from (steps). */
+def int fire_search_budget() { return (o.drink-1)*20-10; }
+/* fire_search (I): with no stand within that budget, refill first. A refill
+ * trip only helps when the mines stop would top drink up (see the descent
+ * provisioning): above that, push to the best stand instead of bouncing
+ * between the two ladders (ep 172). */
+def int fire_search_refill() { return !(o.drink>7+2*o.dex-3); }

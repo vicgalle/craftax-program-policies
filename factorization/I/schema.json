@@ -1,0 +1,1594 @@
+{
+ "FPGoal": {
+  "size": 24,
+  "fields": {
+   "kind": {
+    "type": "i32",
+    "dims": [],
+    "off": 0
+   },
+   "subject": {
+    "type": "i32",
+    "dims": [],
+    "off": 4
+   },
+   "relation": {
+    "type": "i32",
+    "dims": [],
+    "off": 8
+   },
+   "lo": {
+    "type": "i32",
+    "dims": [],
+    "off": 12
+   },
+   "hi": {
+    "type": "i32",
+    "dims": [],
+    "off": 16
+   },
+   "direction": {
+    "type": "i32",
+    "dims": [],
+    "off": 20
+   }
+  }
+ },
+ "FPCommand": {
+  "size": 236,
+  "fields": {
+   "version": {
+    "type": "i32",
+    "dims": [],
+    "off": 0
+   },
+   "count": {
+    "type": "i32",
+    "dims": [],
+    "off": 4
+   },
+   "stages": {
+    "type": "i32",
+    "dims": [],
+    "off": 8
+   },
+   "goals": {
+    "type": "FPGoal",
+    "dims": [
+     8
+    ],
+    "off": 12
+   },
+   "stage": {
+    "type": "i32",
+    "dims": [
+     8
+    ],
+    "off": 204
+   }
+  }
+ },
+ "FPIntent": {
+  "size": 344,
+  "fields": {
+   "command": {
+    "type": "FPCommand",
+    "dims": [],
+    "off": 0
+   },
+   "subgoal": {
+    "type": "FPGoal",
+    "dims": [],
+    "off": 236
+   },
+   "enabled": {
+    "type": "i32",
+    "dims": [],
+    "off": 260
+   },
+   "stage": {
+    "type": "i32",
+    "dims": [],
+    "off": 264
+   },
+   "active": {
+    "type": "i32",
+    "dims": [],
+    "off": 268
+   },
+   "status": {
+    "type": "i32",
+    "dims": [],
+    "off": 272
+   },
+   "claim": {
+    "type": "i32",
+    "dims": [],
+    "off": 276
+   },
+   "reference": {
+    "type": "i32",
+    "dims": [],
+    "off": 280
+   },
+   "started": {
+    "type": "i32",
+    "dims": [],
+    "off": 284
+   },
+   "subgoal_started": {
+    "type": "i32",
+    "dims": [],
+    "off": 288
+   },
+   "transitions": {
+    "type": "i32",
+    "dims": [],
+    "off": 292
+   },
+   "interruptions": {
+    "type": "i32",
+    "dims": [],
+    "off": 296
+   },
+   "resumptions": {
+    "type": "i32",
+    "dims": [],
+    "off": 300
+   },
+   "was_interrupted": {
+    "type": "i32",
+    "dims": [],
+    "off": 304
+   },
+   "bound_target": {
+    "type": "i32",
+    "dims": [],
+    "off": 308
+   },
+   "bound_level": {
+    "type": "i32",
+    "dims": [],
+    "off": 312
+   },
+   "blocked_ticks": {
+    "type": "i32",
+    "dims": [],
+    "off": 316
+   },
+   "replans": {
+    "type": "i32",
+    "dims": [],
+    "off": 320
+   },
+   "executing": {
+    "type": "i32",
+    "dims": [],
+    "off": 324
+   },
+   "has_subgoal": {
+    "type": "i32",
+    "dims": [],
+    "off": 328
+   },
+   "bound_mask": {
+    "type": "u64",
+    "dims": [],
+    "off": 336
+   }
+  }
+ },
+ "FPObservation": {
+  "size": 984,
+  "fields": {
+   "blocks": {
+    "type": "u8",
+    "dims": [
+     99
+    ],
+    "off": 0
+   },
+   "items": {
+    "type": "u8",
+    "dims": [
+     99
+    ],
+    "off": 99
+   },
+   "visible": {
+    "type": "u8",
+    "dims": [
+     99
+    ],
+    "off": 198
+   },
+   "mobs": {
+    "type": "u8",
+    "dims": [
+     99,
+     5
+    ],
+    "off": 297
+   },
+   "inv": {
+    "type": "i32",
+    "dims": [
+     13
+    ],
+    "off": 792
+   },
+   "potions": {
+    "type": "i32",
+    "dims": [
+     6
+    ],
+    "off": 844
+   },
+   "armour": {
+    "type": "i32",
+    "dims": [
+     4
+    ],
+    "off": 868
+   },
+   "armour_enchant": {
+    "type": "i32",
+    "dims": [
+     4
+    ],
+    "off": 884
+   },
+   "health": {
+    "type": "f32",
+    "dims": [],
+    "off": 900
+   },
+   "light": {
+    "type": "f32",
+    "dims": [],
+    "off": 904
+   },
+   "food": {
+    "type": "i32",
+    "dims": [],
+    "off": 908
+   },
+   "drink": {
+    "type": "i32",
+    "dims": [],
+    "off": 912
+   },
+   "energy": {
+    "type": "i32",
+    "dims": [],
+    "off": 916
+   },
+   "mana": {
+    "type": "i32",
+    "dims": [],
+    "off": 920
+   },
+   "xp": {
+    "type": "i32",
+    "dims": [],
+    "off": 924
+   },
+   "dex": {
+    "type": "i32",
+    "dims": [],
+    "off": 928
+   },
+   "str": {
+    "type": "i32",
+    "dims": [],
+    "off": 932
+   },
+   "intelligence": {
+    "type": "i32",
+    "dims": [],
+    "off": 936
+   },
+   "dir": {
+    "type": "i32",
+    "dims": [],
+    "off": 940
+   },
+   "sleeping": {
+    "type": "i32",
+    "dims": [],
+    "off": 944
+   },
+   "resting": {
+    "type": "i32",
+    "dims": [],
+    "off": 948
+   },
+   "spells": {
+    "type": "i32",
+    "dims": [
+     2
+    ],
+    "off": 952
+   },
+   "sword_enchant": {
+    "type": "i32",
+    "dims": [],
+    "off": 960
+   },
+   "bow_enchant": {
+    "type": "i32",
+    "dims": [],
+    "off": 964
+   },
+   "bow": {
+    "type": "i32",
+    "dims": [],
+    "off": 968
+   },
+   "level": {
+    "type": "i32",
+    "dims": [],
+    "off": 972
+   },
+   "clear": {
+    "type": "i32",
+    "dims": [],
+    "off": 976
+   },
+   "boss_vulnerable": {
+    "type": "i32",
+    "dims": [],
+    "off": 980
+   }
+  }
+ },
+ "FPConfig": {
+  "size": 52,
+  "fields": {
+   "drink_at": {
+    "type": "i32",
+    "dims": [],
+    "off": 0
+   },
+   "eat_at": {
+    "type": "i32",
+    "dims": [],
+    "off": 4
+   },
+   "sleep_at": {
+    "type": "i32",
+    "dims": [],
+    "off": 8
+   },
+   "wood_stock": {
+    "type": "i32",
+    "dims": [],
+    "off": 12
+   },
+   "torch_stock": {
+    "type": "i32",
+    "dims": [],
+    "off": 16
+   },
+   "armour_pieces": {
+    "type": "i32",
+    "dims": [],
+    "off": 20
+   },
+   "prepare_steps": {
+    "type": "i32",
+    "dims": [],
+    "off": 24
+   },
+   "mine_steps": {
+    "type": "i32",
+    "dims": [],
+    "off": 28
+   },
+   "str_first": {
+    "type": "i32",
+    "dims": [],
+    "off": 32
+   },
+   "retreat_health": {
+    "type": "i32",
+    "dims": [],
+    "off": 36
+   },
+   "danger_cost": {
+    "type": "f32",
+    "dims": [],
+    "off": 40
+   },
+   "revisit_cost": {
+    "type": "f32",
+    "dims": [],
+    "off": 44
+   },
+   "frontier_bonus": {
+    "type": "f32",
+    "dims": [],
+    "off": 48
+   }
+  }
+ },
+ "FPMark": {
+  "size": 1,
+  "fields": {
+   "visits": {
+    "type": "u8",
+    "dims": [],
+    "off": 0,
+    "bits": [
+     0,
+     6
+    ]
+   },
+   "lit": {
+    "type": "u8",
+    "dims": [],
+    "off": 0,
+    "bits": [
+     6,
+     1
+    ]
+   },
+   "item": {
+    "type": "u8",
+    "dims": [],
+    "off": 0,
+    "bits": [
+     7,
+     1
+    ]
+   }
+  }
+ },
+ "FPFloor": {
+  "size": 27680,
+  "fields": {
+   "map": {
+    "type": "u8",
+    "dims": [
+     9216
+    ],
+    "off": 0
+   },
+   "stations": {
+    "type": "u8",
+    "dims": [
+     9216
+    ],
+    "off": 9216
+   },
+   "marks": {
+    "type": "FPMark",
+    "dims": [
+     9216
+    ],
+    "off": 18432
+   },
+   "up": {
+    "type": "i32",
+    "dims": [],
+    "off": 27648
+   },
+   "down": {
+    "type": "i32",
+    "dims": [],
+    "off": 27652
+   },
+   "seen": {
+    "type": "i32",
+    "dims": [],
+    "off": 27656
+   },
+   "clear": {
+    "type": "i32",
+    "dims": [],
+    "off": 27660
+   },
+   "entered": {
+    "type": "i32",
+    "dims": [],
+    "off": 27664
+   },
+   "steps": {
+    "type": "i32",
+    "dims": [],
+    "off": 27668
+   },
+   "known_lo": {
+    "type": "i32",
+    "dims": [],
+    "off": 27672
+   },
+   "known_hi": {
+    "type": "i32",
+    "dims": [],
+    "off": 27676
+   }
+  }
+ },
+ "FPEnemy": {
+  "size": 20,
+  "fields": {
+   "p": {
+    "type": "i32",
+    "dims": [],
+    "off": 0
+   },
+   "type": {
+    "type": "i32",
+    "dims": [],
+    "off": 4
+   },
+   "kind": {
+    "type": "i32",
+    "dims": [],
+    "off": 8
+   },
+   "cooldown": {
+    "type": "i32",
+    "dims": [],
+    "off": 12
+   },
+   "health": {
+    "type": "f32",
+    "dims": [],
+    "off": 16
+   }
+  }
+ },
+ "FPGoalPublic": {
+  "size": 20,
+  "fields": {
+   "level": {
+    "type": "i32",
+    "dims": [],
+    "off": 0
+   },
+   "food": {
+    "type": "i32",
+    "dims": [],
+    "off": 4
+   },
+   "drink": {
+    "type": "i32",
+    "dims": [],
+    "off": 8
+   },
+   "energy": {
+    "type": "i32",
+    "dims": [],
+    "off": 12
+   },
+   "health": {
+    "type": "f32",
+    "dims": [],
+    "off": 16
+   }
+  }
+ },
+ "FPGoalFrame": {
+  "size": 64,
+  "fields": {
+   "kind": {
+    "type": "i32",
+    "dims": [],
+    "off": 0
+   },
+   "id": {
+    "type": "i32",
+    "dims": [],
+    "off": 4
+   },
+   "parent": {
+    "type": "i32",
+    "dims": [],
+    "off": 8
+   },
+   "frontier": {
+    "type": "i32",
+    "dims": [],
+    "off": 12
+   },
+   "entry_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 16
+   },
+   "suspended": {
+    "type": "i32",
+    "dims": [],
+    "off": 20
+   },
+   "departed": {
+    "type": "i32",
+    "dims": [],
+    "off": 24
+   },
+   "return_outcome": {
+    "type": "i32",
+    "dims": [],
+    "off": 28
+   },
+   "purpose": {
+    "type": "i32",
+    "dims": [],
+    "off": 32
+   },
+   "mode": {
+    "type": "i32",
+    "dims": [],
+    "off": 36
+   },
+   "target": {
+    "type": "i32",
+    "dims": [],
+    "off": 40
+   },
+   "in": {
+    "type": "FPGoalPublic",
+    "dims": [],
+    "off": 44
+   }
+  }
+ },
+ "FPGoalEvent": {
+  "size": 92,
+  "fields": {
+   "frame": {
+    "type": "FPGoalFrame",
+    "dims": [],
+    "off": 0
+   },
+   "out": {
+    "type": "FPGoalPublic",
+    "dims": [],
+    "off": 64
+   },
+   "exit_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 84
+   },
+   "outcome": {
+    "type": "i32",
+    "dims": [],
+    "off": 88
+   }
+  }
+ },
+ "FPGoalRuntime": {
+  "size": 608,
+  "fields": {
+   "frame": {
+    "type": "FPGoalFrame",
+    "dims": [
+     2
+    ],
+    "off": 0
+   },
+   "last_return": {
+    "type": "FPGoalFrame",
+    "dims": [],
+    "off": 128
+   },
+   "event": {
+    "type": "FPGoalEvent",
+    "dims": [
+     4
+    ],
+    "off": 192
+   },
+   "observed": {
+    "type": "FPGoalPublic",
+    "dims": [],
+    "off": 560
+   },
+   "depth": {
+    "type": "i32",
+    "dims": [],
+    "off": 580
+   },
+   "next_id": {
+    "type": "i32",
+    "dims": [],
+    "off": 584
+   },
+   "boundary_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 588
+   },
+   "last_outcome": {
+    "type": "i32",
+    "dims": [],
+    "off": 592
+   },
+   "returns": {
+    "type": "i32",
+    "dims": [],
+    "off": 596
+   },
+   "completions": {
+    "type": "i32",
+    "dims": [],
+    "off": 600
+   },
+   "abandonments": {
+    "type": "i32",
+    "dims": [],
+    "off": 604
+   }
+  }
+ },
+ "FPStratFrame": {
+  "size": 72,
+  "fields": {
+   "kind": {
+    "type": "i32",
+    "dims": [],
+    "off": 0
+   },
+   "id": {
+    "type": "i32",
+    "dims": [],
+    "off": 4
+   },
+   "parent": {
+    "type": "i32",
+    "dims": [],
+    "off": 8
+   },
+   "target": {
+    "type": "i32",
+    "dims": [],
+    "off": 12
+   },
+   "budget": {
+    "type": "i32",
+    "dims": [],
+    "off": 16
+   },
+   "entry_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 20
+   },
+   "entry_level": {
+    "type": "i32",
+    "dims": [],
+    "off": 24
+   },
+   "local": {
+    "type": "i32",
+    "dims": [
+     6
+    ],
+    "off": 28
+   },
+   "in": {
+    "type": "FPGoalPublic",
+    "dims": [],
+    "off": 52
+   }
+  }
+ },
+ "FPStrategic": {
+  "size": 560,
+  "fields": {
+   "frame": {
+    "type": "FPStratFrame",
+    "dims": [
+     3
+    ],
+    "off": 0
+   },
+   "last": {
+    "type": "FPStratFrame",
+    "dims": [],
+    "off": 216
+   },
+   "depth": {
+    "type": "i32",
+    "dims": [],
+    "off": 288
+   },
+   "next_id": {
+    "type": "i32",
+    "dims": [],
+    "off": 292
+   },
+   "boundary_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 296
+   },
+   "last_outcome": {
+    "type": "i32",
+    "dims": [],
+    "off": 300
+   },
+   "calls": {
+    "type": "i32",
+    "dims": [
+     16
+    ],
+    "off": 304
+   },
+   "completions": {
+    "type": "i32",
+    "dims": [
+     16
+    ],
+    "off": 368
+   },
+   "abandonments": {
+    "type": "i32",
+    "dims": [
+     16
+    ],
+    "off": 432
+   },
+   "steps": {
+    "type": "i32",
+    "dims": [
+     16
+    ],
+    "off": 496
+   }
+  }
+ },
+ "FPAgent": {
+  "size": 256760,
+  "fields": {
+   "floors": {
+    "type": "FPFloor",
+    "dims": [
+     9
+    ],
+    "off": 0
+   },
+   "previous": {
+    "type": "FPObservation",
+    "dims": [],
+    "off": 249120
+   },
+   "achieved": {
+    "type": "u8",
+    "dims": [
+     67
+    ],
+    "off": 250104
+   },
+   "r": {
+    "type": "i32",
+    "dims": [],
+    "off": 250172
+   },
+   "c": {
+    "type": "i32",
+    "dims": [],
+    "off": 250176
+   },
+   "observed_r": {
+    "type": "i32",
+    "dims": [],
+    "off": 250180
+   },
+   "observed_c": {
+    "type": "i32",
+    "dims": [],
+    "off": 250184
+   },
+   "level": {
+    "type": "i32",
+    "dims": [],
+    "off": 250188
+   },
+   "t": {
+    "type": "i32",
+    "dims": [],
+    "off": 250192
+   },
+   "previous_action": {
+    "type": "i32",
+    "dims": [],
+    "off": 250196
+   },
+   "previous_block": {
+    "type": "i32",
+    "dims": [],
+    "off": 250200
+   },
+   "previous_mob": {
+    "type": "i32",
+    "dims": [],
+    "off": 250204
+   },
+   "previous_type": {
+    "type": "i32",
+    "dims": [],
+    "off": 250208
+   },
+   "previous_target": {
+    "type": "i32",
+    "dims": [],
+    "off": 250212
+   },
+   "skill": {
+    "type": "i32",
+    "dims": [],
+    "off": 250216
+   },
+   "goal": {
+    "type": "i32",
+    "dims": [],
+    "off": 250220
+   },
+   "target": {
+    "type": "i32",
+    "dims": [],
+    "off": 250224
+   },
+   "last_frontier": {
+    "type": "i32",
+    "dims": [],
+    "off": 250228
+   },
+   "frontier_until": {
+    "type": "i32",
+    "dims": [],
+    "off": 250232
+   },
+   "recovery_goal": {
+    "type": "i32",
+    "dims": [],
+    "off": 250236
+   },
+   "recovery_width": {
+    "type": "i32",
+    "dims": [],
+    "off": 250240
+   },
+   "recovery_height": {
+    "type": "i32",
+    "dims": [],
+    "off": 250244
+   },
+   "recovering": {
+    "type": "i32",
+    "dims": [],
+    "off": 250248
+   },
+   "drinking": {
+    "type": "i32",
+    "dims": [],
+    "off": 250252
+   },
+   "arrows": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 250256
+   },
+   "arrow_count": {
+    "type": "i32",
+    "dims": [],
+    "off": 250268
+   },
+   "projectile_types": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 250272
+   },
+   "potion_effect": {
+    "type": "i32",
+    "dims": [
+     6
+    ],
+    "off": 250284
+   },
+   "enemies": {
+    "type": "FPEnemy",
+    "dims": [
+     8
+    ],
+    "off": 250308
+   },
+   "enemy_count": {
+    "type": "i32",
+    "dims": [],
+    "off": 250468
+   },
+   "farm_attempts": {
+    "type": "i32",
+    "dims": [],
+    "off": 250472
+   },
+   "plant_cell": {
+    "type": "i32",
+    "dims": [],
+    "off": 250476
+   },
+   "plant_tick": {
+    "type": "i32",
+    "dims": [],
+    "off": 250480
+   },
+   "resupplying": {
+    "type": "i32",
+    "dims": [],
+    "off": 250484
+   },
+   "resupply_tick": {
+    "type": "i32",
+    "dims": [],
+    "off": 250488
+   },
+   "water_goal": {
+    "type": "i32",
+    "dims": [],
+    "off": 250492
+   },
+   "wood_exhausted": {
+    "type": "i32",
+    "dims": [],
+    "off": 250496
+   },
+   "unseen_hit": {
+    "type": "i32",
+    "dims": [],
+    "off": 250500
+   },
+   "shot_pos": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 250504
+   },
+   "shot_type": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 250516
+   },
+   "shot_dir": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 250528
+   },
+   "shot_count": {
+    "type": "i32",
+    "dims": [],
+    "off": 250540
+   },
+   "rng": {
+    "type": "u64",
+    "dims": [],
+    "off": 250544
+   },
+   "boss_hits": {
+    "type": "i32",
+    "dims": [],
+    "off": 250552
+   },
+   "troll_wait": {
+    "type": "i32",
+    "dims": [],
+    "off": 250556
+   },
+   "vault_search": {
+    "type": "i32",
+    "dims": [],
+    "off": 250560
+   },
+   "dungeon_wait": {
+    "type": "i32",
+    "dims": [],
+    "off": 250564
+   },
+   "vault_wait": {
+    "type": "i32",
+    "dims": [],
+    "off": 250568
+   },
+   "intent": {
+    "type": "FPIntent",
+    "dims": [],
+    "off": 250576
+   },
+   "fire_camp": {
+    "type": "i32",
+    "dims": [],
+    "off": 250920
+   },
+   "early_wait": {
+    "type": "i32",
+    "dims": [],
+    "off": 250924
+   },
+   "troll_door": {
+    "type": "i32",
+    "dims": [],
+    "off": 250928
+   },
+   "troll_door_stand": {
+    "type": "i32",
+    "dims": [],
+    "off": 250932
+   },
+   "troll_door_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 250936
+   },
+   "troll_slime_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 250940
+   },
+   "troll_hold": {
+    "type": "i32",
+    "dims": [],
+    "off": 250944
+   },
+   "fire_prep": {
+    "type": "i32",
+    "dims": [],
+    "off": 250948
+   },
+   "fire_prep_steps": {
+    "type": "i32",
+    "dims": [],
+    "off": 250952
+   },
+   "fire_dia": {
+    "type": "i32",
+    "dims": [],
+    "off": 250956
+   },
+   "fire_wait": {
+    "type": "i32",
+    "dims": [],
+    "off": 250960
+   },
+   "icetrip_wait": {
+    "type": "i32",
+    "dims": [],
+    "off": 250964
+   },
+   "icetrip_dest": {
+    "type": "i32",
+    "dims": [],
+    "off": 250968
+   },
+   "icetrip_start": {
+    "type": "i32",
+    "dims": [],
+    "off": 250972
+   },
+   "icetrip_guard": {
+    "type": "i32",
+    "dims": [],
+    "off": 250976
+   },
+   "icetrip_prospect": {
+    "type": "i32",
+    "dims": [],
+    "off": 250980
+   },
+   "shallow_search": {
+    "type": "i32",
+    "dims": [],
+    "off": 250984
+   },
+   "shallow_go": {
+    "type": "i32",
+    "dims": [],
+    "off": 250988
+   },
+   "runtime": {
+    "type": "FPGoalRuntime",
+    "dims": [],
+    "off": 250992
+   },
+   "deep_camp": {
+    "type": "i32",
+    "dims": [],
+    "off": 251600
+   },
+   "deep_fort": {
+    "type": "i32",
+    "dims": [],
+    "off": 251604
+   },
+   "deep_fort_shape": {
+    "type": "i32",
+    "dims": [],
+    "off": 251608
+   },
+   "deep_fort_door": {
+    "type": "i32",
+    "dims": [],
+    "off": 251612
+   },
+   "ice_dark_mask": {
+    "type": "i32",
+    "dims": [],
+    "off": 251616
+   },
+   "ice_dark_mode": {
+    "type": "i32",
+    "dims": [],
+    "off": 251620
+   },
+   "ice_dark_until": {
+    "type": "i32",
+    "dims": [],
+    "off": 251624
+   },
+   "troll_dark_mask": {
+    "type": "i32",
+    "dims": [],
+    "off": 251628
+   },
+   "troll_dark_mode": {
+    "type": "i32",
+    "dims": [],
+    "off": 251632
+   },
+   "troll_dark_until": {
+    "type": "i32",
+    "dims": [],
+    "off": 251636
+   },
+   "strat": {
+    "type": "FPStrategic",
+    "dims": [],
+    "off": 251640
+   },
+   "sgl_spent": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 252200
+   },
+   "sgl_retry_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 252212
+   },
+   "sgl_trip": {
+    "type": "i32",
+    "dims": [],
+    "off": 252216
+   },
+   "sgl_trip_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 252220
+   },
+   "sgl_pad": {
+    "type": "i32",
+    "dims": [
+     4
+    ],
+    "off": 252224
+   },
+   "kit_loot_steps": {
+    "type": "i32",
+    "dims": [
+     9
+    ],
+    "off": 252240
+   },
+   "kit_farloot": {
+    "type": "i32",
+    "dims": [],
+    "off": 252276
+   },
+   "mid_pen": {
+    "type": "i32",
+    "dims": [],
+    "off": 252280
+   },
+   "mid_pen_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 252284
+   },
+   "mid_pen_meal": {
+    "type": "i32",
+    "dims": [],
+    "off": 252288
+   },
+   "mid_pen_stand": {
+    "type": "i32",
+    "dims": [],
+    "off": 252292
+   },
+   "mid_pen_food": {
+    "type": "i32",
+    "dims": [],
+    "off": 252296
+   },
+   "mid_log": {
+    "type": "i32",
+    "dims": [
+     4,
+     4
+    ],
+    "off": 252300
+   },
+   "mid_fire_entered": {
+    "type": "i32",
+    "dims": [],
+    "off": 252364
+   },
+   "mid_fire_visits": {
+    "type": "i32",
+    "dims": [],
+    "off": 252368
+   },
+   "mid_fscout_on": {
+    "type": "i32",
+    "dims": [],
+    "off": 252372
+   },
+   "mid_fscout_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 252376
+   },
+   "lgi_sleep": {
+    "type": "i32",
+    "dims": [],
+    "off": 252380
+   },
+   "lgi_trip": {
+    "type": "i32",
+    "dims": [],
+    "off": 252384
+   },
+   "lgi_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 252388
+   },
+   "lgi_aux": {
+    "type": "i32",
+    "dims": [
+     4
+    ],
+    "off": 252392
+   },
+   "rm_init": {
+    "type": "i32",
+    "dims": [],
+    "off": 252408
+   },
+   "rm_prev": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 252412
+   },
+   "rm_synced": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 252424
+   },
+   "rm_t_dec": {
+    "type": "i32",
+    "dims": [
+     3
+    ],
+    "off": 252436
+   },
+   "rm_acc": {
+    "type": "f32",
+    "dims": [
+     3
+    ],
+    "off": 252448
+   },
+   "rule_fires": {
+    "type": "i32",
+    "dims": [
+     256
+    ],
+    "off": 252460
+   },
+   "rm_meals": {
+    "type": "i32",
+    "dims": [
+     9
+    ],
+    "off": 253484
+   },
+   "rm_hsteps": {
+    "type": "i32",
+    "dims": [
+     9
+    ],
+    "off": 253520
+   },
+   "sp_cstamp": {
+    "type": "i32",
+    "dims": [
+     9
+    ],
+    "off": 253556
+   },
+   "sp_cache": {
+    "type": "i32",
+    "dims": [
+     9,
+     4
+    ],
+    "off": 253592
+   },
+   "sp_trip": {
+    "type": "i32",
+    "dims": [],
+    "off": 253736
+   },
+   "sp_trip_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 253740
+   },
+   "sp_log": {
+    "type": "i32",
+    "dims": [
+     4,
+     4
+    ],
+    "off": 253744
+   },
+   "sp_crit": {
+    "type": "i32",
+    "dims": [],
+    "off": 253808
+   },
+   "sp_crit_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 253812
+   },
+   "nav_ent_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 253816
+   },
+   "nav_ent_from": {
+    "type": "i32",
+    "dims": [],
+    "off": 253820
+   },
+   "nav_ent_hp10": {
+    "type": "i32",
+    "dims": [],
+    "off": 253824
+   },
+   "cb_coal": {
+    "type": "i32",
+    "dims": [],
+    "off": 253828
+   },
+   "cb_coal_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 253832
+   },
+   "wm_floor_enemy": {
+    "type": "FPEnemy",
+    "dims": [
+     9,
+     8
+    ],
+    "off": 253836
+   },
+   "wm_floor_enemy_count": {
+    "type": "i32",
+    "dims": [
+     9
+    ],
+    "off": 255276
+   },
+   "rs_event": {
+    "type": "i32",
+    "dims": [],
+    "off": 255312
+   },
+   "rs_target": {
+    "type": "i32",
+    "dims": [],
+    "off": 255316
+   },
+   "rs_until": {
+    "type": "i32",
+    "dims": [],
+    "off": 255320
+   },
+   "bm_init": {
+    "type": "i32",
+    "dims": [],
+    "off": 255324
+   },
+   "bm_wave": {
+    "type": "i32",
+    "dims": [],
+    "off": 255328
+   },
+   "bm_wave_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 255332
+   },
+   "bm_progress_t": {
+    "type": "i32",
+    "dims": [],
+    "off": 255336
+   },
+   "bm_active": {
+    "type": "i32",
+    "dims": [],
+    "off": 255340
+   },
+   "bm_seen": {
+    "type": "u8",
+    "dims": [
+     1152
+    ],
+    "off": 255344
+   },
+   "path_enter": {
+    "type": "u8",
+    "dims": [
+     256
+    ],
+    "off": 256496
+   },
+   "path_enter_key": {
+    "type": "i32",
+    "dims": [],
+    "off": 256752
+   }
+  }
+ },
+ "FPRouteWork": {
+  "size": 13824,
+  "fields": {
+   "settled": {
+    "type": "u64",
+    "dims": [
+     144
+    ],
+    "off": 0
+   },
+   "ring": {
+    "type": "u64",
+    "dims": [
+     11,
+     144
+    ],
+    "off": 1152
+   }
+  }
+ }
+}

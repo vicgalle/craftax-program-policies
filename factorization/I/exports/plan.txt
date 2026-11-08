@@ -1,0 +1,22 @@
+# Natives defined in the plan area (full_strategic.inc, sg_*.inc, m_nav.inc, m_build.inc, goal_runtime.inc).
+# Generic skills: travel, explore, frontier walks, lighting, probing, crafting, harvesting.
+travel
+explore
+frontier_walk
+light_unseen
+light_behind
+dark_probe
+craft_radius
+harvest_walkable
+# World-model memory: known cells of a block on the current floor
+known_count
+# Damage of a floor's resident mob (game fact)
+nav_floor_hit
+# Queries (the program's defs in p/plan.tr): explore's exit-search gate and
+# frontier weighting, the exit search's drink budget and refill choice.
+query explore_fire_search 0
+query explore_prefer_near 0
+query fire_search_budget 0
+query fire_search_refill 0
+# The Sewers ice-armour trip predicate (def enchant_trip, p/floor8.tr), for C callers.
+query enchant_trip 0

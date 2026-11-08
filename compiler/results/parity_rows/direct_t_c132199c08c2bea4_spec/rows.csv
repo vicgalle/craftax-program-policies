@@ -1,0 +1,2 @@
+episode,world_seed,success,violation,completed,stages,length,max_level,end_level,health,wood,stone,coal,iron,diamond,return,action_hash,policy_stage,floor_changes,noops,ascends,descends,stage0_at,stage1_at,stage2_at,stage3_at,stage4_at,stage5_at,stage6_at,stage7_at
+0,3934108850,1,0,5,5,11684,3,3,10.4000,14,37,3,3,1,72.140000,47a49c3406dadc27,4,1499,2866,748,751,11680,11681,11682,11683,11684,-1,-1,-1

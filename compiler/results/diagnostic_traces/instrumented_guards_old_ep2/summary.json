@@ -1,0 +1,12 @@
+{
+  "arm": "guards",
+  "old_episode": 2,
+  "seed": 1950000002,
+  "episodes": 1,
+  "seconds": 1.4600065000013274,
+  "row_identical_to_normal": true,
+  "binary_sha256": "9dc403cf56bb0c4946c3fcfeb90038a8edcb4698ca9f40cd6443cdd4f1d37e3c",
+  "image_sha256": "5dccdcdc393e8025c228a0b1b87d1f14f088cf9dd9af08a9a12297fac6915c95",
+  "rows_sha256": "c50544396ef12e50477e144280fb55b80f5dd0f79a1a46b86196767484dd0b52",
+  "trace_sha256": "0ad2a0459dbe3135203f7e9cff55ec37f137ad34f2c891ca5c00d62e433e9e94"
+}

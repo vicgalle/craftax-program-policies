@@ -1,0 +1,50 @@
+{
+  "candidates": [
+    {
+      "candidate": 1,
+      "controller_path": "direct/t_c132199c08c2bea4/round_1/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 29996.875,
+      "label": "direct_validation_t_c132199c08c2bea4_c1",
+      "run_dirs": [
+        "runs/direct_validation_t_c132199c08c2bea4_c1/t_c132199c08c2bea4_synthesized"
+      ],
+      "sha256": "304e8ce5646e78b682bb6d41143e6f0d0f0f4c8fb2507c7584ed80baabb64e8a",
+      "successes": 4
+    },
+    {
+      "candidate": 2,
+      "controller_path": "direct/t_c132199c08c2bea4/round_2/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 7575.25,
+      "label": "direct_validation_t_c132199c08c2bea4_c2",
+      "run_dirs": [
+        "runs/direct_validation_t_c132199c08c2bea4_c2/t_c132199c08c2bea4_synthesized"
+      ],
+      "sha256": "7e7253928eb4b8a1544a63bdb259957a556bb27349638fcb45a8d8bda6151d6a",
+      "successes": 8
+    },
+    {
+      "candidate": 3,
+      "controller_path": "direct/t_c132199c08c2bea4/round_3/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 6035.375,
+      "label": "direct_validation_t_c132199c08c2bea4_c3",
+      "run_dirs": [
+        "runs/direct_validation_t_c132199c08c2bea4_c3/t_c132199c08c2bea4_synthesized"
+      ],
+      "sha256": "b829b5932571d7c1c6fb6207c57bf7a39376ee6af144a318712ab2a42a44cd30",
+      "successes": 8
+    }
+  ],
+  "closed_sha256": "df65ebdb54c3e5af14e5bd43a0722cc9aca05126da1580771baaf79d6329a251",
+  "controller_path": "direct/t_c132199c08c2bea4/selected.py",
+  "feedback_returned_to_search_agent": false,
+  "key": "t_c132199c08c2bea4",
+  "mode": "direct",
+  "rule": "max successes, min failure-penalized steps, earlier candidate",
+  "selected_candidate": 3,
+  "selection_seed": 2040000000,
+  "selection_worlds": 8,
+  "sha256": "b829b5932571d7c1c6fb6207c57bf7a39376ee6af144a318712ab2a42a44cd30"
+}

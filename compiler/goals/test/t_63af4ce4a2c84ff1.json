@@ -1,0 +1,41 @@
+{
+  "name": "t_63af4ce4a2c84ff1",
+  "sequence": [
+    {
+      "acquire": {
+        "wood": 11,
+        "stone": 5
+      },
+      "maintain": {
+        "wood": 5,
+        "stone": 2
+      }
+    },
+    {
+      "reach": 1
+    },
+    {
+      "acquire": {
+        "wood": 12,
+        "stone": 3
+      },
+      "maintain": {
+        "wood": 7,
+        "stone": 1
+      }
+    },
+    {
+      "reach": 0
+    },
+    {
+      "acquire": {
+        "wood": 11,
+        "stone": 4
+      },
+      "maintain": {
+        "wood": 7,
+        "stone": 2
+      }
+    }
+  ]
+}

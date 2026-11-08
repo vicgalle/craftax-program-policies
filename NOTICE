@@ -1,0 +1,22 @@
+Craftax program policies
+Copyright 2026 Victor Gallego
+
+The engine in engine/ is from craftax.cu:
+
+craftax.cu
+Copyright 2026 Elliot Arledge
+
+Licensed under the Apache License, Version 2.0 with LLVM Exceptions
+(the "License"); you may not use this software except in compliance with
+the License. See the LICENSE file for the full text.
+
+This software is a CUDA reimplementation of Craftax, the JAX benchmark
+environment by Michael T. Matthews et al., originally released under the
+MIT License:
+
+    https://github.com/MichaelTMatthews/Craftax
+
+The upstream MIT license and copyright notice are preserved by reference.
+
+The animation in assets/ is rendered with the Craftax sprites, Copyright (c) 2024
+Michael Matthews, MIT License.

@@ -1,0 +1,18 @@
+RUN_ID=3: fresh model search context with shared training data.
+Read only allowed training goals, incumbent/reference, fixed compiler/search/audit, frozen machine/TR sources, diagnostic evidence, shared baselines, and own round results.
+Both baseline result files were read before round 1. Baseline incumbent: 58/64 successes.
+
+Candidate 1: retained incumbent gear gate and pure-reach behavior; enlarged resource search radius; replenished active reserves with surplus wood6, stone3, coal3, iron3; routed reserved reach goals directly on cleared floors and used frontier/lighting when exit missing.
+Training: 56/64 successes; failure-penalized mean 13590.265625 steps; actual 638394 steps. Coal reserve tasks improved from 1/4 and 3/4 to 4/4 each, but direct deeper travel regressed several wood/stone and mixed goals through deaths or resupply cycles.
+
+Candidate 2: keeps candidate1 surplus, but direct descent only for target1 or an already visited goal floor, and only when not resupplying. New deeper frontier preparation remains with frozen behavior. Training: 61/64 successes; failure-penalized mean 11299.6875 steps; actual 646720 steps. Restored all wood/stone cases to 4/4, while mixed coal/iron remained 2/4.
+
+Candidate 3: candidate2 plus active-reserve Overworld supply of station wood up to the frozen wood-stock threshold even if wood itself is unreserved; return upward before surplus detours; permit new shallow route travel at the frozen Overworld readiness wood/gear thresholds and on cleared Dungeon floors. Deeper mine preparation still delegated. Training: 61/64 successes; failure-penalized mean 11475.421875 steps; actual 597295 steps. Mixed coal/iron improved from 2/4 to 3/4, and mixed wood/iron improved from 3/4 to 4/4; wood-only and one wood/stone task each fell from 4/4 to 3/4. This is a tradeoff, not a final selection.
+
+
+Closed: exactly 3 evaluated candidates, each 16 training tasks x4 worlds x50000-action horizon. All source/archive/result hashes verified against closed.json. No held-out or validation feedback read and no final candidate selected.
+Candidate 1 SHA256 eeb0acc6076d098b4cb9dc17455e1a9401ce26771dbb1e20c3ecab38d6159d61; training 56/64; failure-penalized steps 13590.265625; violations 0.
+Candidate 2 SHA256 b088294dcc7ab870412b94d948cc140a4da02804a07226a472246bb2f46c4327; training 61/64; failure-penalized steps 11299.6875; violations 0.
+Candidate 3 SHA256 74e913c190aec93ec91015f86c236f42f94e3a6be6a37db7f0dacdbb8b5575c3; training 61/64; failure-penalized steps 11475.421875; violations 0.
+
+Limitations: surplus thresholds are heuristic; search may still fail when no reachable remembered resource exists. Base preparation and survival remain consequential. Final round changes are bundled, so training outcomes do not isolate individual causal effects. Token usage unavailable; no token counts claimed.

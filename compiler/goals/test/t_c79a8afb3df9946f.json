@@ -1,0 +1,54 @@
+{
+  "name": "t_c79a8afb3df9946f",
+  "sequence": [
+    {
+      "acquire": {
+        "coal": 3,
+        "iron": 6
+      },
+      "maintain": {
+        "coal": 3,
+        "iron": 1
+      }
+    },
+    {
+      "reach": 1
+    },
+    {
+      "acquire": {
+        "coal": 6,
+        "iron": 5
+      },
+      "maintain": {
+        "coal": 2,
+        "iron": 3
+      }
+    },
+    {
+      "reach": 0
+    },
+    {
+      "acquire": {
+        "coal": 6,
+        "iron": 4
+      },
+      "maintain": {
+        "coal": 2,
+        "iron": 3
+      }
+    },
+    {
+      "reach": 2
+    },
+    {
+      "acquire": {
+        "coal": 3,
+        "iron": 3
+      },
+      "maintain": {
+        "coal": 2,
+        "iron": 1
+      }
+    }
+  ]
+}

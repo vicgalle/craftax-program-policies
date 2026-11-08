@@ -1,0 +1,39 @@
+{
+  "name": "t_ea2cb87384bc47eb",
+  "sequence": [
+    {
+      "reach": 2
+    },
+    {
+      "reach": 3
+    },
+    {
+      "reach": 2
+    },
+    {
+      "acquire": {
+        "iron": 5
+      },
+      "maintain": {
+        "iron": 2
+      }
+    },
+    {
+      "reach": 0
+    },
+    {
+      "reach": 1
+    },
+    {
+      "reach": 3
+    },
+    {
+      "acquire": {
+        "iron": 4
+      },
+      "maintain": {
+        "iron": 1
+      }
+    }
+  ]
+}

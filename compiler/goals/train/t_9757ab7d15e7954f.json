@@ -1,0 +1,16 @@
+{
+  "name": "t_9757ab7d15e7954f",
+  "sequence": [
+    {
+      "reach": 2
+    },
+    {
+      "acquire": {
+        "stone": 5
+      },
+      "maintain": {
+        "stone": 3
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "mode": "direct",
+  "run": null,
+  "candidate": 1,
+  "label": "direct_t_63af4ce4a2c84ff1_c1",
+  "seed": 2030000000,
+  "episodes_per_goal": 8,
+  "horizon": 50000,
+  "authored_source": "direct/t_63af4ce4a2c84ff1/candidate1.py",
+  "archived_source": "direct/t_63af4ce4a2c84ff1/round_1/source.py",
+  "source_sha256": "8e8aa1af3bdd9157df02505a1df08653bc93a28ea02d3311928bb6a147e58ea1",
+  "audit": {
+    "controller_path": "direct/t_63af4ce4a2c84ff1/candidate1.py",
+    "sha256": "8e8aa1af3bdd9157df02505a1df08653bc93a28ea02d3311928bb6a147e58ea1",
+    "checked_goal_structures": 1,
+    "note": "Static/interface checks plus separate manual review; not a semantic proof."
+  },
+  "tasks": {
+    "goals/test/t_63af4ce4a2c84ff1.json": "841b4dd16736535090023a15bee57163025eab5129ea59545b8522648de187f9"
+  },
+  "goals": {
+    "t_63af4ce4a2c84ff1": {
+      "program": "generated/direct_t_63af4ce4a2c84ff1_c1/t_63af4ce4a2c84ff1_synthesized",
+      "program_image_sha256": "c6492a9266ad2121099b18c53c2d4acbbee48534496781fffd6f94c54fe10676",
+      "plan_sha256": "bb224f6911fcd697a62b55ebd07777e260c40f29be8f747ebf991477eeb0903b",
+      "goal_sha256": "eb10391f21a82b12fde3da6dcb81430c66bd0b826ef6cff50e3072cb0646e84c",
+      "evaluator_sha256": "5a92edba9bdfb953e61d6af975246d4f5cac422ef05a44b866b33923b35c75dc",
+      "monitor_sha256": "8bffbf6523ea8cec9dbeb7efeac4eff8964859792d5f4c05c70e293a7dacd0b7",
+      "run_source_sha256": "94ef090477689969a46078a9b387ddac25430c5655147f25390db63f9c8a4c86",
+      "rows_sha256": "2db586d4bb3e341c3bfea5a131faa69e5f10d9c9d6a69329a6e001ca9d83d287",
+      "binary_sha256": "1d709ae4e52ec23798fa71485b9dbc189e5c8b67398f6b77325f49ee4f9bb705",
+      "mode": "spec",
+      "seed": 2030000000,
+      "horizon": 50000,
+      "seconds": 0.41802795799958403,
+      "episodes": 8,
+      "successes": 6,
+      "success_rate": 0.75,
+      "violations": 0,
+      "timeouts": 0,
+      "deaths": 2,
+      "mean_progress": 0.8,
+      "failure_penalized_steps": 13301.375
+    }
+  },
+  "total_episodes": 8,
+  "successes": 6,
+  "failure_penalized_steps": 13301.375,
+  "actual_steps": 7700,
+  "evaluation_seconds": 0.41802795799958403,
+  "preflight_seconds": 36.970313707999594,
+  "wall_seconds": 37.49161062499843
+}

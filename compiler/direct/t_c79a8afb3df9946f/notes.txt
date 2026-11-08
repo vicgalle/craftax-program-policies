@@ -1,0 +1,60 @@
+Independent direct search for t_c79a8afb3df9946f
+
+Scope and protocol
+Read the single assigned goal, both complete allowed baseline result JSONs,
+reference.py, incumbent.py, compiler/search/audit and frozen API sources, the
+allowed baseline run rows, and public old-world resource diagnostics. Did not
+inspect another goal, another new controller/search, validation feedback, or
+held-out outcomes. Wrote only this direct-goal directory; approved search.py
+created its standard generated/build/run outputs. Parent owns agent_run.json
+and subsequent selection. Exactly three evaluations, all via prescribed CLI
+with workers 3, seed 2030000000, eight episodes and horizon 50000. No additional
+rollout or trace evaluations. Token cost is unknown.
+
+Baseline evidence
+Reference: 5/8 successes, failure-penalized steps 29583.625.
+Incumbent: 3/8 successes, failure-penalized steps 36143.5.
+The reference's unsuccessful worlds include an early death, repeated floor
+changes, and a late coal shortage. Old diagnostics support explicit navigation
+and usable reserve margins, but their episodes are not new evaluation data.
+
+Candidate 1
+Start from reference. Broaden local resource search from 300 to 3000, prepare
+a stone sword after the required pickaxe, and explicitly explore when a reach
+route or resource action is unavailable. Hypothesis: avoid distant remembered
+source shuttling, help discovery, and supply a minimally adequate weapon.
+Observed: 2/8 successes, FPS 38710.25, zero violations, zero timeouts, six
+deaths. Mean progress 0.4285714286. Several unsuccessful episodes spent many
+steps on floor 0 with abundant basic materials but insufficient ore. Explicit
+exploration preempted the frozen policy's useful descent/preparation route.
+
+Candidate 2
+Independent compact controller with explicit pickaxe tier 2, sword tier 2 and
+iron sword preparation; reserve-aware crafting inputs; broad local gathering;
+coal target six before iron; explicit exploration/navigation. Hypothesis: iron
+weapon preparation and preventing raw-inventory crafting stalls can avoid the
+first candidate's deaths, while carrying coal six serves subsequent stages.
+Observed: 1/8 successes, FPS 44144.25, zero violations, zero timeouts, seven
+deaths. Mean progress 0.2142857143. Most unsuccessful episodes again remained
+on floor 0 too long. This strengthens the evidence for retaining reference
+fallthrough when acquisition cannot produce an immediate action.
+
+Candidate 3
+Return to reference preparation and acquisition fallthrough. Keep ordinary
+radius 300 searches, but permit radius 3000 on Mines floor 2. Once that floor
+has been observed, remote coal/iron lookup selects floor 2 instead of distant
+Overworld deposits, to prevent floor-1-to-floor-0 oscillation. Reach stages
+explicitly explore if the ladder route is unavailable. This isolates route
+repair without committing to the first two candidates' surface exploration.
+Observed: 4/8 successes, FPS 34069.75, zero violations, two timeouts, two
+deaths. Mean progress 0.625. This restored much of reference behavior but did
+not improve its 5/8 tuning score. One failed world has identical actions to
+reference; the late coal-shortage world still timed out, while one previously
+successful world died during the final reach. No candidate is selected here.
+
+Immutable sources and final closure
+Candidate 1: 36fa89996ff9965cfcbda6c202fdfd40d77a6474ef88f806dabefb54bbcab1d6
+Candidate 2: 9f3f83a7256fa7fe235c839a143a278bde22ed8657063a9f6a697ddabbc2d48e
+Candidate 3: f2a50d002e3fed89b2c0255dd991a3d2c16a5484536006021ec61124af1eff57
+closed.json confirms exactly three completed rounds, search_closed true,
+validation_feedback_used false. No selected.py was created.

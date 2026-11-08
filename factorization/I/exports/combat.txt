@@ -1,0 +1,25 @@
+# Natives defined in the combat area (m_combat.inc, full_response.inc, full_tactics.inc, full_boss_model.inc),
+# and the machine functions the combat program (p/combat.tr) calls.
+fire_hit
+# World model queries (full_wm.inc)
+wm_shot_count
+wm_shot_cell
+wm_shot_heading
+wm_shot_code
+wm_projectile_damage
+wm_melee_threat_at
+wm_slimeball_damage
+wm_melee_incoming
+wm_hit_damage
+wm_risk
+wm_greedy_next
+# Scratch views and an enemy-index wrapper (m_combat.inc)
+melee_at
+ranged_at
+enemy_health_at
+wm_greedy_approach_i
+# The shield's rollout simulator (full_tactics.inc)
+tx_dies_at_least
+tx_evaluate
+tx_mob_shot
+tx_ranged_code

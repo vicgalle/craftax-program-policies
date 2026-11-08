@@ -1,0 +1,25 @@
+Task: t_8a1370d7e160a5e2
+Known structure: acquire stone4 maintain2, reach3, acquire stone4 maintain1, reach2, acquire stone4 maintain2.
+Read both allowed baseline result JSONs completely, all four associated baseline rows files, reference.py, incumbent.py, compiler.py, search.py, audit.py, selected runner/frozen API sources, and old resource-failure diagnostics. No other tasks, new search sources, validation outcomes, or held-out results used.
+
+Baseline training feedback (8 worlds, seed2030000000 horizon50000): original 3 successes FPS37508.375 with2 violations; guards4 FPS34027.5; reference2 FPS38566.125; incumbent5 FPS27177.75. Reference makes thousands of floor changes in several failing episodes. Incumbent early deaths include a floor0 failure holding exactly stone2, consistent with reserve margin blocking gear inputs. Old diagnostic evidence identifies recipe/station reserve blocks and excessive delegation during reach goals.
+
+Candidate1: retain inherited early preparation, acquire control after iron pick/sword, then directly route the active floor goal. On floor2 require clearance, diamond sword and armour value2, rather than await the base's full equipment target. When exit travel fails, light/probe unseen cells, walk frontiers, then explore. Return travel is immediate. Active task stone stock is topped up to4 locally. Survival remains above the inserted rule with original reference eligibility bounds.
+Observed candidate1: 5/8 successes,0 violations,0 timeouts,3 deaths; failure_penalized_steps24056.375; actual_steps94176. Successful lengths5606,10190,7872,8954,9829. This reduces successful travel/preparation time, but unchanged early preparation preserves two early deaths; third failing world now lasts46989 steps without reaching floor3.
+
+Candidate2: preserve candidate1 routing and add stone replenishment to6 whenever a pick exists, before the iron equipment gate. The buffer lets stone recipes/stations consume inputs above the maintained reserve of2 instead of repeatedly choosing guarded crafts. This deliberately changes initial gathering and therefore later paths; no world identity is used by the controller.
+
+Observed candidate2:6/8 successes,0 violations,0 timeouts,2 deaths; failure_penalized_steps20418.5; actual_steps66232. Early floor0 failure disappeared in the earlier failing episode, but another world now dies on floor0 holding stone2/wood1. Floor1 early death remains in another world. Successful lengths8185,8785,7262,23084,5529,10503.
+
+Candidate3: add explicit early stone-sword preparation before accumulating the six-stone buffer. Once a wood pick exists, gather stone3 and wood3, then craft a stone sword, respecting the maintained stone2 floor. This aims to prevent gathering from delaying initial protective equipment. Keep candidate2 routing and reserve buffer unchanged afterward.
+
+Observed candidate3:6/8 successes,0 violations,0 timeouts,2 deaths; failure_penalized_steps18124.625; actual_steps51721. Successful lengths7183,6667,8490,4977,8914,8766. The two failures end on floor0 at440 and floor1 at6284. The early sword changes the trajectory enough to recover one candidate2 failure while losing one candidate2 success; it also speeds several successful worlds. These training observations do not establish held-out performance.
+
+Exactly3 approved direct trials were evaluated, all --workers3, eight tuning worlds each, seed2030000000, horizon50000. Total24 episodes and212129 actual engine steps. No extra rollout or trace evaluation was run. Every trial passed static/interface audit and preflight. search.py produced closed.json with search_closed=true and validation_feedback_used=false. No candidate was selected and no selected.py was authored. Parent owns later selection/testing.
+
+Source SHA256:
+candidate1 f2693e5f80a9e1f549a301c3ee629eafc524a94f67e697c0c730b55b4cf4f58b
+candidate2 ab61bb58f27a208fbcaed92ae71ead1a9ed1007e05fbccee168f1c4b06e5eb12
+candidate3 e8eadb2c2e19663f459d23e1693d62e79721c5cd207e1492d1f828a4881159f9
+
+Token cost: unknown; platform did not supply a token-cost value.

@@ -1,0 +1,660 @@
+// supply.tr: the supply strategy of the floor-8 program. Moved from I (level 2):
+// the drink seek and its floor-1 retreat, the supply planner's drink goal, the
+// Ice-phase excursion legs on Fire (icetrip_home, icetrip_forage) and the Fire
+// ladder airlock (icetrip_lock, icetrip_seal), the Ice supply goals (lg_ice) and
+// the troll/fire-phase supply goals (lg_mid), and the shelter policy that I's
+// recover/chamber_walls/sealed_in ask for (queries shelter_*, at the end). I
+// keeps the machine they drive: seek_block, hunt, travel, forage, recover,
+// chamber_walls, water_cost and the resource model (rm_*).
+
+// ---------------------------------------------------------------- constants
+// Excursion destinations (icetrip_dest) and the Fire ladder wait.
+const ICETRIP_OUT = 0;
+const ICETRIP_MINES = 5;
+const ICETRIP_HOME = 6;
+const ICETRIP_FORAGE = 0;
+const ICETRIP_WAIT = 60;
+
+// Supply planner (SP_*).
+const SP_FROM = 5;          // planner region: floor SP_FROM seen
+const SP_DRINK = 1;
+const SP_ALPHA_X10 = 15;
+const SP_BETA = 25;
+const SP_LEVELS = 0x3F;     // floors 0-5
+const RM_FOOD = 0;
+const RM_DRINK = 1;
+
+// Ice stream (lg_ice), candidate sd2: LGI_SLEEP=1 LGI_DRINK=1.
+const LGI_DEX = 0;          // spend the Ice arrival XP point on dexterity
+const LGI_SLEEP = 1;        // sleep on Ice before a supply departure
+const LGI_SLEEP_E = 5;      // ... when energy is at most this
+const LGI_SLEEP_FOOD = 6;   // ... and the departure is near: food at most this
+const LGI_DRINK = 1;        // top up drink before crossing Fire
+const LGI_DRINK_ICE = 250;  // Ice: path cost to water accepted before a departure
+const LGI_DRINK_MINES = 400;// Troll Mines, homebound: path cost to water accepted
+const LGI_FILL = 0;         // homebound from a supply floor: eat visible animals to the top
+const LGI_SLEEP_HP = 0;     // also enter while health is at most this (0: off)
+const LGI_HEAL_TO = 9;      // healing target
+const LGI_HEAL = 0;         // at the departure (food 2-3), keep healing while health <= 6.5
+const LGI_THIRST = 0;
+const LGI_THIRST_AT = 4;
+const LGI_BOUNCE = 0;
+const LGI_BOUNCE_MIN = 2;
+const LGI_BOUNCE_R = 15;
+const LGI_DEPART = 0;
+const LGI_DEPART_AT = 3;
+const LGI_EPOT = 0;
+
+// Mid stream (lg_mid).
+const MID_PEN = 0;
+const MID_DEX = 2;
+const MID_PEN_IN = 6;        // food at which the pen starts
+const MID_PEN_OUT = 3;       // food at or below which the pen gives up
+const MID_PEN_PATIENCE = 0;  // steps without a meal before giving up (0: none)
+const MID_PEN_RANGE = 400;   // pen stand: path cost (10 per step)
+const MID_PEN_HUNT = 12;     // bat hunt radius (steps)
+const MID_PEN_TORCHES = 10;  // torches kept (Fire and Ice need them)
+const MID_PEN_GAIN = 10;     // unlit walkable view cells a pen torch must light
+const MID_TOPUP = 0;         // opportunistic top-ups in the troll phase (0: off)
+const MID_TOPUP_WATER = 8;   // water within this many steps
+const MID_TOPUP_BAT = 10;    // visible bat within this many steps
+const MID_MWATER = 0;        // mines water beyond 100 steps / earlier water climb (0: off)
+const MID_MW_LEAVE = 4;      // drink at which the water climb leaves (incumbent: 2)
+const MID_FSCOUT = 0;        // Fire scout: Fire visits without the exit before it acts (0: off)
+const MID_FSCOUT_MARGIN = 20;// steps of drink kept beyond the walk back
+const MID_DEXC = 0;          // DEX only when a strength point would not cut a troll's blows-to-kill
+const MID_DEX6 = 0;          // XP in the fire phase: dexterity up to this level first (0: off)
+const MID_LOG = 0;
+const MID_G_PEN = 0;
+const MID_G_WATER = 1;
+const MID_G_TRIP = 2;
+const MID_G_SLEEP = 3;
+
+// ------------------------------------------------------------- drink seek
+/* A remembered fountain may be reachable yet farther than the up ladder
+ * plus the cleared Overworld water route. At critical drink, compare those
+ * trips instead of committing to a long Dungeon corridor (ep 17). */
+def int water_return(int wcost) {
+ if(a.level!=1 || o.drink>3)return -1;
+ int up=a.floors[1].up,landing=a.floors[0].down;
+ if(up<0 || landing<0 || path_dist(up)>=INF)return -1;
+ int distance=INF;
+ for(int p=a.floors[0].known_lo;p<=a.floors[0].known_hi;p++)if(a.floors[0].map[p]==WATER || a.floors[0].map[p]==FOUNTAIN)
+  distance=imin(distance,abs(p/SIDE-landing/SIDE)+abs(p%SIDE-landing%SIDE));
+ if(distance>=INF || dist_at(up)+10*distance+30>=wcost)return -1;
+ return up==cell(a.r,a.c)?ASCEND:move_path(up);
+}
+
+/* Drink: on the Dungeon, Sewers and Vault keep walking to the remembered
+ * water goal (within 250 steps); elsewhere the nearest water within 100. */
+def int seek_water() {
+ if(a.level!=1 && a.level!=3 && a.level!=4)return seek_block(WATER,100);
+ int g=a.water_goal,start=cell(a.r,a.c),b=g>=0?a.floors[a.level].map[g]:UNKNOWN;
+ if(b==FOUNTAIN || b==WATER) {
+  int best=-1,facing=0,costbest=INF;
+  for(int d=1;d<=4;d++) {
+   int rr=g/SIDE-dr[d],cc=g%SIDE-dc[d];if(!inside(rr,cc))continue;
+   int q=cell(rr,cc),cost=path_dist(q)+(q==start && o.dir==d?0:10);
+   if(cost<costbest){best=q;facing=d;costbest=cost;}
+  }
+  if(best>=0 && costbest<=2500) {
+   int retreat=water_return(costbest);if(retreat>=0)return retreat;
+   a.goal=WATER;a.target=g;
+   if(best==start)return o.dir==facing?DO:facing;
+   return move_path(best);
+  }
+ }
+ int act=seek_block(WATER,100);
+ a.water_goal=act>=0?a.target:-1;
+ if(act>=0 && a.level==1 && a.water_goal>=0) {
+  int g2=a.water_goal,cost2=INF;
+  for(int d=1;d<=4;d++) {
+   int rr=g2/SIDE-dr[d],cc=g2%SIDE-dc[d];if(inside(rr,cc))cost2=imin(cost2,path_dist(cell(rr,cc))+10);
+  }
+  int retreat=water_return(cost2);if(retreat>=0)return retreat;
+ }
+ return act;
+}
+
+// ------------------------------------------------------ supply planner
+/* DRINK GOAL. Entry: the drinking flag is set (drink <= cfg->drink_at, or 2 while recovering), seek_water found
+ * no water within its radius, and the agent is on a floor in SP_LEVELS. The resource model gives the cheapest
+ * known water (this floor beyond the radius, or through the ladders: rm_plan_cost) and the awake time to empty
+ * (rm_time_to_empty, exact from the tracked thirst counter). Policy: local water -> walk to it now; off-floor
+ * water -> leave by that ladder once SP_ALPHA*cost + SP_BETA >= time to empty (the incumbent leaves at drink 2,
+ * 3 or 4 whatever the distance). Completion: drink refilled to the maximum (the drinking flag clears).
+ * Abandonment: no known reachable water (-1: the incumbent's thirst rules act), or a higher rule takes over. */
+def int sp_plan_drink() {
+ if(!sp_region() || !((SP_LEVELS>>a.level)&1))return -1;
+ int dir=-1,cost=rm_plan_cost(RM_DRINK,&dir);
+ if(cost<0)return -1;
+ int tte=rm_time_to_empty(RM_DRINK);
+ if(dir==0)return seek_block(WATER,cost+20);
+ if(SP_ALPHA_X10*cost/10+SP_BETA<tte)return -1;
+ if(!a.sp_trip){a.sp_trip=1;a.sp_trip_t=a.t;a.sp_log[0][0]++;}
+ return travel(dir>0);
+}
+
+// ------------------------------------------- Ice-phase excursions on Fire
+/* Homebound across Fire after a mines stop. The base rules sent a hungry
+ * agent back up from Fire whenever no bat was in view, and the mines rules
+ * sent it down again: 5<->6 ladder bounces every step down to food 0. Going
+ * home, eat only bats close to the route, keep healthy coal stops short, and
+ * never turn back. */
+def int icetrip_home(out int skill) {
+ int here=cell(a.r,a.c),D=a.floors[6].down;
+ if(a.icetrip_dest!=ICETRIP_HOME || enchant_trip() || D<0 || path_dist(D)>=INF)return -1;
+ int melee=99;float hit=fire_hit();
+ for(int i=0;i<a.enemy_count;i++){int d=abs(a.enemies[i].p/SIDE-a.r)+abs(a.enemies[i].p%SIDE-a.c);if(!a.enemies[i].kind && d<melee)melee=d;}
+ if(o.food<=7+2*o.dex-3 && o.health>hit+1.5f){int act=hunt(2,8);if(act>=0){skill=EAT;return act;}}
+ if(o.health>=hit+3 && melee>6 && o.inv[I_COAL]<8){int act=seek_block(COAL,6);if(act>=0){skill=GATHER;return act;}}
+ skill=TRAVEL;return D==here?DESCEND:move_path(D);
+}
+
+/* Ice has no food, so every Ice stay ends in a food excursion (86% leave at
+ * food <= 3). The base bounced Ice<->Fire one step at a time until food 2,
+ * then crossed Fire in ice armour to the dark Troll Mines (2.1 trips per Ice
+ * entrant, 6% death each, ~300 Fire steps). Fire is lit and spawns bats near
+ * the player (0.1 per step, 3-14 cells away; first bat eaten after a median
+ * 12 Fire steps in traces), so feed beside the Ice ladder: hunt bats close
+ * by, mine torch coal next to it while waiting, and go home fed.
+ * A pigman left beside the ladder is frozen there and strikes on the next
+ * arrival (6.2-6.8 of 12-13 health), including the Ice side's low-health
+ * escapes up the ladder: an earlier version that left at the first threat
+ * died on arrival in 7 of 20 traced worlds. So fight a pigman at the ladder
+ * while one blow is affordable (it costs one blow; three iceballs kill it
+ * within its cooldown) and leave it there only when it is not. */
+def int icetrip_forage(out int skill) {
+ int here=cell(a.r,a.c),D=a.floors[6].down;
+ if(!ICETRIP_FORAGE || a.icetrip_dest!=ICETRIP_OUT || enchant_trip() || D<0 || path_dist(D)>=INF)return -1;
+ int maxfood=7+2*o.dex,mD=99,mU=99,line=0,dr0=D/SIDE,dc0=D%SIDE;float hit=fire_hit();
+ for(int i=0;i<a.enemy_count;i++) {
+  int er=a.enemies[i].p/SIDE,ec=a.enemies[i].p%SIDE;
+  if(!a.enemies[i].kind){mD=imin(mD,abs(er-dr0)+abs(ec-dc0));mU=imin(mU,abs(er-a.r)+abs(ec-a.c));}
+  else if(wm_firing_line(a.r,a.c,er,ec))line=1;
+ }
+ int low=o.health<=hit+1.5f,calm=mU>6 && !line && !low,home=D==here?DESCEND:move_path(D);
+ /* Contract with Ice: the base never descends to Ice at 6 health or less
+  * (it heals in a Fire shelter or in the mines first), and the Ice rules
+  * assume it. */
+ if(o.health<=6.5f)return -1;
+ skill=TRAVEL;
+ /* Fed or out of drink: home, unless a pigman near the ladder can still be
+  * fought there (waiting on the ladder lets it come; tactical fights it). */
+ if(o.food>=maxfood-2 || o.drink<=2 || o.energy<=1) {
+  if(calm && o.inv[I_COAL]<8){int act=seek_block(COAL,4);if(act>=0){skill=GATHER;return act;}}
+  if(low || mD>3 || here!=D || ++a.icetrip_guard>20)return home;
+  skill=FIGHT;return NOOP;
+ }
+ if(!low || mU>5){int act=hunt(2,8);if(act>=0){skill=EAT;return act;}}
+ if(calm && o.inv[I_COAL]<8){int act=seek_block(COAL,6);if(act>=0){skill=GATHER;return act;}}
+ if(calm && o.inv[0]<6){int act=seek_block(TREE,6);if(act>=0){skill=GATHER;return act;}}
+ if(here!=D)return home;
+ /* Low: a blow would kill. Leave while the pigman is still two steps off. */
+ if(low && mU>=2 && mU<=5)return DESCEND;
+ if(++a.icetrip_wait>=ICETRIP_WAIT) {
+  /* A ladder walled in by lava or rock sees few bats: cross to the mines. */
+  if(o.food<=1){a.icetrip_dest=ICETRIP_MINES;return -1;}
+  return DESCEND;
+ }
+ skill=EAT;return NOOP;
+}
+
+/* The Fire ladder airlock: a sealed 2x2 room around the Ice ladder. Half of
+ * all excursion deaths follow a Fire arrival at 6.5 health or less (Ice's
+ * escapes up the ladder and hungry departures). Healing inside sealed stone
+ * took no damage in traces, and with the ladder inside the room every later
+ * arrival from Ice lands behind walls. Returns the anchor (top-left) of the
+ * cheapest valid room holding the ladder, or -1. */
+def int icetrip_lock() {
+ int D=a.floors[6].down;if(D<0)return -1;
+ int r=D/SIDE,c=D%SIDE,best=-1,nb=INF;
+ for(int k=0;k<4;k++) {
+  int ar=r-(k>>1),ac=c-(k&1);if(!inside(ar,ac))continue;
+  int n=chamber_walls(cell(ar,ac),2,2);
+  if(n>=0 && n<nb){nb=n;best=cell(ar,ac);}
+ }
+ return best;
+}
+
+/* Before descending to Ice from inside a room around the ladder that lacks
+ * one or two walls, put them back: the next arrival from Ice, often a
+ * low-health escape, then lands behind stone. Only with the stone in hand
+ * and no melee mob near. */
+def int icetrip_seal() {
+ int lock=icetrip_lock();if(lock<0)return -1;
+ int n=chamber_walls(lock,2,2),r=lock/SIDE,c=lock%SIDE,start=cell(a.r,a.c);
+ if(n<1 || n>2 || o.inv[I_STONE]<n || wm_melee_within(3))return -1;
+ if(a.r<r||a.r>=r+2||a.c<c||a.c>=c+2)return -1;
+ for(int i=0;i<8;i++) {
+  int wr=0,wc=0,d=0;wall_position(i,2,2,&wr,&wc,&d);
+  int rr=r+wr,cc=c+wc,b=block(rr,cc);
+  if(!(walkable(b)||b==WATER||b==LAVA))continue;
+  int stand=cell(rr-dr[d],cc-dc[d]),partner=cell(rr-2*dr[d],cc-2*dc[d]);
+  if(start==stand && o.dir==d)return PLACE_STONE;
+  if(start==partner)return d;
+  return move_path(partner);
+ }
+ return -1;
+}
+
+// ------------------------------------------------- Ice stream (lg_ice)
+/* Logistics module "ice" (push50): Ice-phase supply. Region: floors[7].seen
+ * (the frontier is the Ice Realm, including every excursion from Ice back
+ * through Fire, the Troll Mines and floors 1-4). Ice has no food, so every
+ * Ice stint ends in an excursion. Excursions that start at energy < 3 die
+ * 7.2% of the time, at 3-4 2.5%, at >= 7 0.5%. Drink deaths on Fire follow
+ * departures with part-filled drink. */
+def int lgi_max() { return 7+2*o.dex; }
+def float lgi_per() { return 26.0f/(1.0f-0.125f*(o.dex-1)); }
+
+/* Food spent by the rest: the sleep to full energy (half decay), then awake
+ * healing to the target at full decay (health +1 per 13 steps asleep, 26 awake). */
+def float lgi_rest_food(int heal, out float sleep_food) {
+ float per=lgi_per(),sl=(float)(lgi_max()-o.energy)*11;
+ sleep_food=sl*0.5f/per;
+ float need=heal?(float)LGI_HEAL_TO-o.health:0,awake=need>sl/13?(need-sl/13)*26:0;
+ return sleep_food+awake/per;
+}
+
+/* PROVISION goal (Ice): sleep and heal before the supply departure.
+ * Entry: on Ice, no ice-enchant trip pending, the departure near (food <=
+ * LGI_SLEEP_FOOD) and energy <= LGI_SLEEP_E, or health <= LGI_SLEEP_HP; food
+ * for the rest plus the departure stock (3) in hand; drink >= 2 (filled first
+ * when Ice water is reachable); no melee mob within 4.
+ * Policy: the recovery room, which on Ice encloses the up ladder, sealed;
+ * sleep to full energy, then wait to LGI_HEAL_TO health.
+ * Abandonment: food or drink at 1; food short of the rest still needed plus 2
+ * (a sleep cannot be cut short); no room can be built (recover yields). */
+def int lgi_sleep_act() {
+ if(!LGI_SLEEP || a.level!=7 || enchant_trip()){a.lgi_sleep=0;return -1;}
+ int full=o.energy>=lgi_max(),low=LGI_HEAL && o.health<=6.5f;
+ float sf=0,cost=0;
+ if(a.lgi_sleep) {
+  int heal=a.lgi_sleep==2;cost=lgi_rest_food(heal,&sf);
+  int done=full && (!heal || o.health>=LGI_HEAL_TO || o.health>=8+o.str-0.01f);
+  int stock=low?2:3,stop=o.food<=1 || o.drink<=1 || (heal?o.food<stock:(!o.sleeping && !full && o.food<2+sf)) || (full && o.food<stock);
+  if(done || stop){a.lgi_sleep=0;a.recovering=0;return -1;}
+ } else {
+  int want_e=o.energy<=LGI_SLEEP_E,want_h=(LGI_SLEEP_HP && o.health<=LGI_SLEEP_HP) || low;
+  if(!(want_e || want_h) || wm_melee_within(4) || o.drink<2)return -1;
+  cost=lgi_rest_food(want_h,&sf);
+  int window=o.food<=LGI_SLEEP_FOOD && o.food>=3+cost;
+  /* At the departure with low health: heal down to food 2 (awake if a sleep
+   * would not fit). */
+  if(!window && !(low && o.food>=2 && o.food<=3))return -1;
+  /* Sleep drains drink at half rate: fill it first when Ice water is reachable. */
+  if(o.drink<=lgi_max()-4 && water_cost()<=1000){a.drinking=1;return -1;}
+  a.lgi_sleep=want_h?2:1;
+ }
+ a.recovering=1;
+ /* Awake healing when a sleep would not fit in the food left. */
+ if(!o.sleeping && !full && o.food<2+sf && sealed_in())return o.food>0 && o.drink>0?NOOP:-1;
+ int act=recover();
+ if(act<0){a.lgi_sleep=0;a.recovering=0;return -1;}
+ return act;
+}
+
+/* DRINK provisioning before a Fire crossing (Fire has no water). Ice: once
+ * the departure is near (food <= 4) top drink up when water is within
+ * LGI_DRINK_ICE path cost. Troll Mines, homebound (fed: food >= max-3): top
+ * up within LGI_DRINK_MINES. Sets the drinking flag, which fills to the max. */
+def void lgi_drink_flag() {
+ if(!LGI_DRINK || a.drinking || enchant_trip() || wm_melee_within(4))return;
+ int mx=lgi_max();
+ if(a.level==7 && o.food<=4 && o.drink<=mx-3 && water_cost()<=LGI_DRINK_ICE)a.drinking=1;
+ if(a.level==5 && icetrip() && o.food>=mx-3 && o.drink<=mx-2 && water_cost()<=LGI_DRINK_MINES)a.drinking=1;
+}
+
+/* Known Ice water within 25 cells of the Ice up ladder (Manhattan). */
+def int lgi_ice_water() {
+ int up=a.floors[7].up;if(up<0)return 0;
+ for(int p=a.floors[7].known_lo;p<=a.floors[7].known_hi;p++)if(a.floors[7].map[p]==WATER && abs(p/SIDE-up/SIDE)+abs(p%SIDE-up%SIDE)<=25)return 1;
+ return 0;
+}
+
+/* Thirsty on Fire with Ice water known near the Ice ladder: drink on Ice
+ * (one ladder away) instead of crossing Fire to the mines pools. */
+def int lgi_drink_home() {
+ if(!LGI_DRINK || !icetrip() || a.level!=6 || enchant_trip() || o.drink>3 || o.health<=6.5f || a.lgi_aux[0]!=1 || !lgi_ice_water())return -1;
+ /* Not into a besieged ladder (hostiles within 5 on the last Ice step), and
+  * once per thirst. */
+ if(a.lgi_aux[1] || a.lgi_aux[2])return -1;
+ int D=a.floors[6].down,here=cell(a.r,a.c);
+ if(D<0 || path_dist(D)>=INF || dist_at(D)>300)return -1;
+ if(D==here){a.lgi_aux[2]=1;return DESCEND;}
+ return move_path(D);
+}
+
+/* THIRST trip: with no reachable water known on Ice, leave for the mines
+ * pools while LGI_THIRST_AT drink remains, and on Fire go on up. */
+def int lgi_thirst() {
+ if(!LGI_THIRST || enchant_trip() || o.drink>LGI_THIRST_AT || o.drink<1)return -1;
+ if(a.level==7) {
+  if(water_cost()<=1000 || wm_melee_within(3))return -1;
+  return travel(0);
+ }
+ if(a.level==6 && icetrip() && a.lgi_aux[0]==2 && o.drink<=LGI_THIRST_AT)return travel(0);
+ return -1;
+}
+
+/* FILL: on a lit supply floor of an excursion or the mines, eat visible
+ * animals within 30 steps while food is three short of the top. */
+def int lgi_fill() {
+ if(!LGI_FILL || !icetrip() || enchant_trip() || a.level<3 || a.level>5)return -1;
+ if(o.food>lgi_max()-3 || o.health<5 || wm_hostile_within(4) || o.inv[I_SWORD]<2)return -1;
+ return hunt(2,30);
+}
+
+/* BOUNCE goal (Fire, at the Ice ladder): bounce down to food LGI_BOUNCE_MIN,
+ * hunt only bats within LGI_BOUNCE_R steps (coal within 6 when short), then
+ * go home down the ladder. */
+def int lgi_bounce() {
+ if(!LGI_BOUNCE || !icetrip() || a.level!=6 || enchant_trip())return -1;
+ int D=a.floors[6].down,here=cell(a.r,a.c);
+ if(D<0 || path_dist(D)>=INF || dist_at(D)>400)return -1;
+ if(o.food>lgi_max()-3 || o.food<LGI_BOUNCE_MIN || o.health<=6.5f || o.drink<2 || o.energy<=cfg.sleep_at)return -1;
+ if(o.inv[I_SWORD]>=2 && !wm_melee_within(5)){int act=hunt(2,LGI_BOUNCE_R);if(act>=0)return act;}
+ if(o.inv[I_COAL]<8 && o.health>=8 && !wm_hostile_within(6) && wm_incoming_damage(NOOP)==0){int act=seek_block(COAL,6);if(act>=0)return act;}
+ return D==here?DESCEND:move_path(D);
+}
+
+/* DEPART (Ice): leave when the food expected on reaching the up ladder falls
+ * to LGI_DEPART_AT + 0.5, so the Fire stage starts at food 3. */
+def int lgi_depart() {
+ if(!LGI_DEPART || a.level!=7 || enchant_trip() || a.lgi_sleep || o.sleeping)return -1;
+ int up=a.floors[7].up;if(up<0 || path_dist(up)>=INF)return -1;
+ if(o.food>LGI_DEPART_AT+4 || o.health<=6.5f || wm_melee_within(3))return -1;
+ float per=26.0f/(1.0f-0.125f*(o.dex-1)),eta=o.food-(dist_at(up)/10)/per;
+ if(eta>LGI_DEPART_AT+0.5f)return -1;
+ return up==cell(a.r,a.c)?ASCEND:move_path(up);
+}
+
+/* EPOT: an identified energy potion (+8 energy) replaces a sleep. */
+def int lgi_epot() {
+ if(!LGI_EPOT || o.sleeping || o.resting)return -1;
+ int want=o.energy<=cfg.sleep_at || (a.level==7 && LGI_SLEEP && o.energy<=LGI_SLEEP_E && o.food<=LGI_SLEEP_FOOD);
+ if(!want || o.energy>lgi_max()-8+2)return -1;
+ for(int i=0;i<6;i++)if(o.potions[i] && a.potion_effect[i]==4){a.lgi_sleep=0;return POTION_RED+i;}
+ return -1;
+}
+
+/* The supply hook: after fights, escapes and the low-health retreats,
+ * before the drink, food, healing and sleep rules. */
+def int lg_ice_supply(out int skill) {
+ if(!lg_ice_region())return -1;
+ int act=-1;
+ /* Ice water reachable within the drink rule's radius (seen on the last Ice step). */
+ if(a.level==7){a.lgi_aux[0]=water_cost()<=1000?1:2;a.lgi_aux[1]=wm_hostile_within(5);}
+ if(o.drink>=lgi_max()-1)a.lgi_aux[2]=0;
+ lgi_drink_flag();
+ act=lgi_epot();if(act>=0){skill=RECOVER;return act;}
+ act=lgi_sleep_act();if(act>=0){skill=RECOVER;return act;}
+ if(LGI_DEPART && a.level==7 && a.drinking && o.drink<lgi_max() && water_cost()<=1000)return -1; /* top up first */
+ act=lgi_depart();if(act>=0){skill=TRAVEL;return act;}
+ act=lgi_drink_home();if(act>=0){skill=TRAVEL;return act;}
+ act=lgi_thirst();if(act>=0){skill=TRAVEL;return act;}
+ act=lgi_bounce();if(act>=0){skill=act==DESCEND?TRAVEL:EAT;return act;}
+ act=lgi_fill();if(act>=0){skill=EAT;return act;}
+ return -1;
+}
+
+// ------------------------------------------------- mid stream (lg_mid)
+/* Logistics module "mid" (push50): supply goals while the frontier is the
+ * Troll Mines or the Fire Realm (lg_mid_region). Every goal acts only in the
+ * troll phase or the fire phase; outside the region nothing here runs.
+ *
+ * PEN ("bat pen"): on-floor food in the Troll Mines. Bats spawn there at the
+ * same rate as snails on the lit floors above but are observed only on lit
+ * cells: wait in a lit area, light its unlit walkable cells, hunt the bats
+ * that wander in. Entry: troll phase, floor 5, food <= MID_PEN_IN, drink >= 2,
+ * not holding for a heal, energy above the sleep threshold, no failed pen
+ * since the last meal, a pen stand within MID_PEN_RANGE. Done: food >= max-1.
+ * Abandon: food <= MID_PEN_OUT, patience, or the floor left. */
+def void mid_log_call(int g) { a.mid_log[g][0]++; }
+def void mid_log_end(int g, int completed, int t0) { a.mid_log[g][completed?1:2]++;a.mid_log[g][3]+=a.t-t0; }
+/* Debug builds only: expose the goal log through unused strategic slots
+ * (GEMS..ATTRIBUTES) so that the sg column of p50_eval rows carries it. */
+def void mid_log_flush() {
+ if(MID_LOG) {
+  for(int g=0;g<4;g++){a.strat.calls[SG_GEMS+g]=a.mid_log[g][0];a.strat.completions[SG_GEMS+g]=a.mid_log[g][1];
+   a.strat.abandonments[SG_GEMS+g]=a.mid_log[g][2];a.strat.steps[SG_GEMS+g]=a.mid_log[g][3];}
+ }
+}
+
+/* Lit as the engine lights the mines: torch disks (memory: lit) and the
+ * up ladder's own disk (r^2 <= 22, the same 4.7-cell falloff as a torch). */
+def int mid_lit(int p) {
+ if(a.floors[5].marks[p].lit)return 1;
+ int u=a.floors[5].up;if(u<0)return 0;
+ int dr_=p/SIDE-u/SIDE,dc_=p%SIDE-u%SIDE;return dr_*dr_+dc_*dc_<=22;
+}
+/* Prefix sums of lit walkable cells, in the scratch prefix image. */
+def void mid_lit_prefix() {
+ for(int c=0;c<=SIDE;c++)prefix_put(0,c,0);
+ for(int r=0;r<SIDE;r++) {
+  int n=0;prefix_put(r+1,0,0);
+  for(int c=0;c<SIDE;c++){int p=cell(r,c);n+=walkable(a.floors[5].map[p]) && mid_lit(p);prefix_put(r+1,c+1,prefix_at(r,c+1)+n);}
+ }
+}
+def int mid_window(int p) {
+ int r=p/SIDE,c=p%SIDE,r0=r>4?r-4:0,c0=c>5?c-5:0,r1=imin(r+5,SIDE),c1=imin(c+6,SIDE);
+ return prefix_at(r1,c1)-prefix_at(r0,c1)-prefix_at(r1,c0)+prefix_at(r0,c0);
+}
+/* Pools in clear view along the stand's row and column at range 2-5: the
+ * firing lines of deep things (they spawn on water and shoot along axes). */
+def int mid_pool_lines(int p) {
+ int r=p/SIDE,c=p%SIDE,n=0;
+ for(int k=1;k<=4;k++)for(int j=1;j<=5;j++) {
+  int b=block(r+j*dr[k],c+j*dc[k]);if(solid(b))break;
+  if(j>=2 && b==WATER)n++;
+ }
+ return n;
+}
+def int mid_pen_stand() {
+ int best=-1,bs=-INF;
+ mid_lit_prefix();paths_within(MID_PEN_RANGE);
+ for(int p=a.floors[5].known_lo;p<=a.floors[5].known_hi;p++) {
+  if(dist_at(p)>MID_PEN_RANGE || !walkable(a.floors[5].map[p]) || mob_at(p))continue;
+  int w=mid_window(p);if(w<8)continue;
+  int score=4*w-dist_at(p)/10-8*mid_pool_lines(p)+(p==a.floors[5].up?20:0);
+  if(score>bs){bs=score;best=p;}
+ }
+ return best;
+}
+/* Light unlit walkable cells of the stand's view: walk to the placement that
+ * lights the most of them, approaching its stand from behind (light_unseen). */
+def int mid_pen_light(int stand) {
+ int start=cell(a.r,a.c),best=-1,dir=0,costbest=INF;
+ if(o.inv[I_TORCH]<=MID_PEN_TORCHES)return -1;
+ paths_within(150);
+ int R=stand/SIDE,C=stand%SIDE;
+ for(int r=R-4;r<=R+4;r++)for(int c=C-5;c<=C+5;c++) {
+  if(!inside(r,c))continue;int p=cell(r,c);
+  if(!place_valid(p,PLACE_TORCH))continue;
+  int gain=0;
+  for(int rr=-4;rr<=4;rr++)for(int cc=-4;cc<=4;cc++) {
+   int y=r+rr,x=c+cc;if(rr*rr+cc*cc>22 || !inside(y,x) || abs(y-R)>4 || abs(x-C)>5)continue;
+   int q=cell(y,x);if(walkable(a.floors[5].map[q]) && !mid_lit(q))gain++;
+  }
+  if(gain<MID_PEN_GAIN)continue;
+  for(int d=1;d<=4;d++) {
+   int sr=r-dr[d],sc=c-dc[d],pr=sr-dr[d],pc=sc-dc[d];
+   if(!inside(sr,sc)||!inside(pr,pc)||!walkable(block(sr,sc))||mob_at(cell(sr,sc)))continue;
+   int st=cell(sr,sc),partner=cell(pr,pc);
+   if(start==st && o.dir==d)return PLACE_TORCH;
+   if(dist_at(partner)>150)continue;
+   int cost=dist_at(partner)+10-10*gain;
+   if(cost<costbest){best=partner;dir=d;costbest=cost;}
+  }
+ }
+ if(best<0)return -1;
+ return best==start?dir:move_path(best);
+}
+def void mid_pen_end(int completed) {
+ mid_log_end(MID_G_PEN,completed,a.mid_pen_t);
+ a.mid_pen=completed?0:2;a.mid_pen_stand=0;
+}
+def int mid_pen(int hold, out int skill) {
+ if(!MID_PEN || !troll_phase())return -1;
+ /* A meal: food above the last value this goal saw (the hook is not reached
+  * on every step, so compare with its own memory, not the previous step). */
+ int maxfood=7+2*o.dex,meal=o.food>a.mid_pen_food;a.mid_pen_food=o.food;
+ /* A failed pen ends at the next meal or on another floor. */
+ if(a.mid_pen==2 && (meal || o.level!=5))a.mid_pen=0;
+ if(a.mid_pen==1) {
+  if(meal)a.mid_pen_meal=a.t;
+  if(o.level!=5){mid_pen_end(0);a.mid_pen=0;return -1;}
+  if(o.food>=maxfood-1){mid_pen_end(1);return -1;}
+  if(o.food<=MID_PEN_OUT || (MID_PEN_PATIENCE && a.t-a.mid_pen_meal>=MID_PEN_PATIENCE)){mid_pen_end(0);return -1;}
+ }
+ if(a.mid_pen==0) {
+  if(o.level!=5 || o.food>MID_PEN_IN || o.food<=MID_PEN_OUT || o.drink<2 || hold || o.energy<=cfg.sleep_at)return -1;
+  int st=mid_pen_stand();if(st<0)return -1;
+  a.mid_pen=1;a.mid_pen_t=a.t;a.mid_pen_meal=a.t;a.mid_pen_stand=st+1;mid_log_call(MID_G_PEN);
+ }
+ if(a.mid_pen!=1)return -1;
+ /* Yield for a step: drink first, sleep and heal in shelter (rules below). */
+ if(o.drink<=2 || o.energy<=cfg.sleep_at || a.recovering || hold)return -1;
+ if(o.health<=6 && o.food>2)return -1;
+ skill=EAT;
+ int act=forage();if(act>=0)return act;
+ int st2=a.mid_pen_stand-1;
+ if(st2<0 || path_dist(st2)>=INF){st2=mid_pen_stand();if(st2<0)return -1;a.mid_pen_stand=st2+1;}
+ skill=LIGHT;act=mid_pen_light(st2);if(act>=0)return act;
+ skill=EAT;
+ if(st2!=cell(a.r,a.c))return move_path(st2);
+ return NOOP;
+}
+
+/* TOPUP: opportunistic on-floor sourcing in the troll phase, floor 5: drink
+ * from water within MID_TOPUP_WATER steps at drink <= max-3, strike a visible
+ * bat within MID_TOPUP_BAT steps at food <= max-3, with no melee mob within 6. */
+def int mid_topup(out int skill) {
+ if(!MID_TOPUP || !troll_phase() || a.level!=5 || o.health<=5 || wm_melee_within(6))return -1;
+ int mx=7+2*o.dex,act=-1;
+ if(o.drink<=mx-3){act=seek_block(WATER,MID_TOPUP_WATER);if(act>=0){a.drinking=1;skill=DRINK;return act;}}
+ if(o.food<=mx-3){act=hunt(2,MID_TOPUP_BAT);if(act>=0){skill=EAT;return act;}}
+ return -1;
+}
+
+/* MWATER: with no mines water within the drink rule's 100-step radius,
+ * leave by the up ladder at drink <= MID_MW_LEAVE instead of 2. */
+def int mid_mwater(int hold, out int skill) {
+ if(!MID_MWATER || !troll_phase() || a.level!=5 || !a.drinking || hold)return -1;
+ if(water_cost()<=1000)return -1;
+ int act=-1;
+ if(o.drink<=MID_MW_LEAVE){act=travel(0);if(act>=0){skill=TRAVEL;return act;}}
+ return -1;
+}
+
+/* FSCOUT ("Fire scout"): the exit search on a cleared Fire beyond the drink
+ * radius of fire_search: the frontier stand with the best score among those
+ * whose path cost from here plus 1.1x the Manhattan way back fit
+ * drink*21 - margin. */
+def int mid_fscout(out int skill) {
+ if(!MID_FSCOUT || !fire_phase())return -1;
+ if(a.level!=6)return -1;
+ if(a.mid_fire_entered!=a.floors[6].entered+1){a.mid_fire_entered=a.floors[6].entered+1;if(a.floors[6].down<0)a.mid_fire_visits++;}
+ if(a.floors[6].down>=0 || a.fire_prep==1 || a.mid_fire_visits<MID_FSCOUT)return -1;
+ int up=a.floors[6].up;if(up<0 || path_dist(up)>=INF)return -1;
+ if(o.drink<=3 || o.energy<=cfg.sleep_at || o.health<=fire_retreat()+1 || wm_hostile_within(6))return -1;
+ int budget=o.drink*21-MID_FSCOUT_MARGIN;
+ if(dist_at(up)/10>=budget)return -1;
+ int T=0,B=0,L=0,R=0;fire_bounds_at(6,&T,&B,&L,&R);
+ for(int c=0;c<=SIDE;c++)prefix_put(0,c,0);
+ for(int r=0;r<SIDE;r++) {
+  int n=0,in=r>=T && r<=B;prefix_put(r+1,0,0);
+  for(int c=0;c<SIDE;c++){n+=a.floors[6].map[cell(r,c)]==UNKNOWN && in && c>=L && c<=R;prefix_put(r+1,c+1,prefix_at(r,c+1)+n);}
+ }
+ int best=-1;float scorebest=-1e30f;paths_all();
+ for(int p=a.floors[6].known_lo;p<=a.floors[6].known_hi;p++) {
+  if(dist_at(p)<=0||dist_at(p)>=INF)continue;
+  int r=p/SIDE,c=p%SIDE,r0=r>4?r-4:0,c0=c>5?c-5:0,r1=imin(r+5,SIDE),c1=imin(c+6,SIDE);
+  int n=prefix_at(r1,c1)-prefix_at(r0,c1)-prefix_at(r1,c0)+prefix_at(r0,c0);
+  if(n<4)continue;
+  if(dist_at(p)/10+(abs(r-up/SIDE)+abs(c-up%SIDE))*11/10>budget)continue;
+  float score=cfg.frontier_bonus*0.75f*n-0.4f*dist_at(p)-cfg.revisit_cost*4*imin(a.floors[6].marks[p].visits,50);
+  if(p==a.last_frontier && a.t<a.frontier_until)score+=12;
+  if(score>scorebest){best=p;scorebest=score;}
+ }
+ if(best<0)return -1;
+ if(!a.mid_fscout_on){a.mid_fscout_on=1;a.mid_fscout_t=a.t;mid_log_call(MID_G_TRIP);}
+ a.last_frontier=best;a.frontier_until=a.t+10;skill=EXPLORE;
+ return move_path(best);
+}
+
+/* The module's hook, after the drink seek and before the troll-phase drink
+ * and food climbs. */
+def int lg_mid_supply(int hold, out int skill) {
+ if(!lg_mid_region())return -1;
+ if(a.mid_fscout_on && (a.floors[6].down>=0 || a.level!=6)){mid_log_end(MID_G_TRIP,a.floors[6].down>=0,a.mid_fscout_t);a.mid_fscout_on=0;}
+ int act=mid_pen(hold,&skill);
+ if(act<0)act=mid_mwater(hold,&skill);
+ if(act<0)act=mid_topup(&skill);
+ if(act<0)act=mid_fscout(&skill);
+ mid_log_flush();
+ return act;
+}
+
+/* Attribute spending in the troll phase (the XP of the Troll Mines arrival):
+ * dexterity first, up to MID_DEX. One point slows food, drink and energy
+ * decay by 12.5% and raises each maximum by 2. The order (strength, then
+ * intelligence) resumes after. */
+def int lg_mid_xp() {
+ if(!(MID_DEX && lg_mid_region() && troll_phase() && o.xp>0 && o.dex<MID_DEX))return 0;
+ if(MID_DEXC) {
+  /* A troll has 20 health. Strength raises sword damage by 25% of base per
+   * point: when one more point still leaves the same number of blows, it
+   * buys nothing in the mines. */
+  float d0=wm_hit_damage_str(0,6,0),d1=wm_hit_damage_str(1,6,0);
+  if(o.str<5 && ceilf(20/d1)<ceilf(20/d0))return 0;
+ }
+ return 1;
+}
+
+// ------------------------------------- shelter policy (queries of recover)
+// I's recover/chamber_walls/sealed_in build sealable rooms; these answers set
+// which blocks stand as walls, which cell the room must hold and its cost.
+const TB9 = 0;
+const TB22 = 0;
+const ICE_BASE_DIST = 400;
+
+/* Mob projectiles destroy tables and furnaces. A Dungeon mage opened such a
+ * wall and an orc killed the sleeping player (3.5x damage). Gnome arrows
+ * opened mine shelters the same way (ep 158, 534); kobolds throw daggers.
+ * On floors 1-3 neither stands as a wall nor is placed as one. */
+def int shelter_tables() { return a.level<1 || a.level>3; }
+
+/* Shallow Overworld: water already stops zombies. Filling it with stone
+ * paved over the pond next to every shelter: one long run placed 632
+ * stones on the Overworld and died of thirst beside its old water. */
+def int shelter_pond() { return a.level==0 && !a.floors[3].seen; }
+
+/* Ice base: the up ladder when it is close enough to anchor the healing room.
+ * 120 of 468 Ice melee hits (60 traces) were taken walking to the ladder when
+ * food reached 3, often out of a shelter besieged by trolls that had gathered
+ * against its walls (arrive7 ep 10 r0 t17633), and the trip then started at low
+ * health (excursion death .15 below 4 health, .02 above 8). A room enclosing the
+ * ladder is left by the ladder itself, and a return lands inside it. */
+def int shelter_base() { return a.level==7?a.floors[7].up:-1; }
+def int shelter_base_reach() { return ICE_BASE_DIST; }
+
+/* Room cost: path + 50 per wall to place + 40 per risk + 25 per step of water
+ * distance (healing can require another drink; short hydration trips reduce
+ * exposure while health is low). Troll Mines (TB9): deaths cluster in
+ * recovery, on the walk to a shelter up to 35 steps away at low health; the
+ * water bonus also put rooms beside pools whose deep things fired at every
+ * exit. Seal close by instead. */
+def int shelter_troll() { return TB9 && a.level==5 && troll_phase(); }
+def int shelter_kd() { return shelter_troll()?2:1; }
+def int shelter_kn() { return shelter_troll()?40:50; }
+def int shelter_kr() { return 40; }
+def int shelter_kw() { return shelter_troll()?0:25; }
+def int shelter_wnear() { return shelter_troll()?3:0; }
+def int shelter_wpen() { return 60; }
+
+/* A room around the up ladder keeps a one-step escape from a troll that
+ * catches us building it, and the ladder's surroundings are lit (TB22). */
+def int shelter_bonus_cell() { return TB22 && a.level==5 && troll_phase() && a.floors[5].up>=0?a.floors[5].up:-1; }
+def int shelter_bonus() { return 400; }

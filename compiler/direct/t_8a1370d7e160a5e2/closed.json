@@ -1,0 +1,27 @@
+{
+  "rounds": [
+    {
+      "candidate": 1,
+      "source_sha256": "f2693e5f80a9e1f549a301c3ee629eafc524a94f67e697c0c730b55b4cf4f58b",
+      "result_sha256": "65433537f03d43894a831a64cc24d0955cbd6f7f37d4fee6df099bc03b49d9cb"
+    },
+    {
+      "candidate": 2,
+      "source_sha256": "ab61bb58f27a208fbcaed92ae71ead1a9ed1007e05fbccee168f1c4b06e5eb12",
+      "result_sha256": "e5716abb2e5cc53fb7f5e34720f259bfbd705eff2a228c5908f44dfbf48bd50a"
+    },
+    {
+      "candidate": 3,
+      "source_sha256": "e8eadb2c2e19663f459d23e1693d62e79721c5cd207e1492d1f828a4881159f9",
+      "result_sha256": "d44e329060128d19117f7858230eb20d13349a7118b41b9bec8f688c39e34de9"
+    }
+  ],
+  "training_seed": 2030000000,
+  "episodes_per_goal": 8,
+  "horizon": 50000,
+  "tasks": {
+    "goals/test/t_8a1370d7e160a5e2.json": "237abae0693e125a07710a034d7d1caf03c65bbe1c286c6a0c75e1b5315a94fc"
+  },
+  "search_closed": true,
+  "validation_feedback_used": false
+}

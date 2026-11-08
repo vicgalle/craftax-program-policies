@@ -1,0 +1,12 @@
+{
+  "arm": "reference",
+  "old_episode": 4,
+  "seed": 1950000004,
+  "episodes": 1,
+  "seconds": 0.9810020000004442,
+  "row_identical_to_normal": true,
+  "binary_sha256": "9dc403cf56bb0c4946c3fcfeb90038a8edcb4698ca9f40cd6443cdd4f1d37e3c",
+  "image_sha256": "af990ae8788f488140d0c10791787eedb380f609ac85ab18ba2cf277f968ffba",
+  "rows_sha256": "675861e297adf556a7a8969eda186cdc2dd96b6f8f346284ff4352d0fb6cd1b3",
+  "trace_sha256": "24dab56fa34ed058c385546c52545e2975f6052c54b9bbfc7201db8367eaed93"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "t_2ffa2c7476f464b6",
+  "sequence": [
+    {
+      "acquire": {
+        "iron": 2
+      },
+      "maintain": {
+        "iron": 1
+      }
+    },
+    {
+      "reach": 1
+    }
+  ]
+}

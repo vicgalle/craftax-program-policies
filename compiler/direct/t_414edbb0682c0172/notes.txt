@@ -1,0 +1,26 @@
+Independent direct search for t_414edbb0682c0172
+
+Allowed task: acquire wood 7 and stone 2; thereafter maintain wood 3 and stone 1; reach floor 1.
+Read both baseline aggregate JSONs completely and all four baseline row files. Baseline original 6/8 (two reserve violations), guards 7/8 and 7182.625 failure-penalized steps, reference 5/8 and 19956.25, incumbent 7/8 and 7426.5. Guards/incumbent share an early overworld death; reference additionally spends long periods before descent. These are tuning baseline observations only.
+Read reference.py, incumbent.py, compiler.py, search.py, audit.py and frozen controller/machine API sources. Read old resource-failure diagnostics; these motivate explicit productive fallback and margins above maintained stock. No other new search, task, validation or held-out outcome was inspected.
+
+Candidate 1: independent shallow-task controller. Obtain a wood pick and stone sword, gather active task stock, then travel directly to the target floor. Missing resource/ladder paths trigger frontier walking and exploration instead of unrestricted high-priority craft fallback. Existing survival rules remain above the insertion anchor. Eligibility is health >4 and food/drink/energy >2, with no hostile within four cells. Exactly the prescribed eight tuning worlds, seed 2030000000 and horizon 50000; workers 3.
+
+Candidate 1 feedback: 8/8 successes, zero violations/deaths/timeouts, failure-penalized steps 563.625 (4509 actual steps). Individual completion lengths 80,744,750,176,604,1152,699,304. The route works, but some episodes still spend time in inherited fallback after task acquisition.
+
+Candidate 2: retain wood pick/stone sword preparation, gather and direct route, but always use controller after the already higher-priority survival rules. Removing duplicate health/supply/hostile eligibility avoids exposing unrelated guarded craft behavior merely because a distant enemy is remembered. No survival rule is reordered or altered.
+
+Candidate 2 feedback: 8/8 successes, zero violations/deaths/timeouts, failure-penalized steps 557.375 (4459 actual steps). Completion lengths 80,940,737,359,571,839,629,304. Always-active control produced a small aggregate improvement, with episode variation despite the same worlds.
+
+Candidate 3: batch the known shallow task resources before each craft. Gather 11 wood before the wood pick (7 goal stock +2 table +1 pick +1 stone sword). Then hold at least 8 wood and gather 3 stone before stone-sword construction, so the recipe leaves the target 7 wood/2 stone when the original station can be reused. Retain the always-active controller and stone-sword defense. This tests reducing repeated walks to wood and stone while retaining the successful direct route. The post-craft general resource check handles extra station costs.
+
+Candidate 3 feedback: 6/8 successes, zero violations/timeouts, two deaths; failure-penalized steps 13003.0 (4786 actual steps). Completion lengths for successful episodes 1063,1030,349,713,429,440; failures at 424 (one stage complete) and 338 (no stage complete). Batching delayed equipment and changed exploration; aggregate training performance worsened. The rows alone do not isolate which route/equipment difference caused these deaths.
+
+Search is closed after exactly three approved search.py direct evaluations, all workers 3, eight episodes each at seed 2030000000/horizon 50000. No additional rollout or trace evaluations were performed. All candidates passed static/interface audit and compilation. Authored candidates were never changed after evaluation. closed.json was emitted by search.py after candidate 3. Parent owns later selection; selected.py was not written. No validation feedback or held-out outcomes were read.
+
+Source SHA256 and training scores:
+1 58014b5b9a94d48233c759494cfd6f0c4981cd5f9c7f639856c78513f8f31183 : 8/8, failure-penalized steps 563.625
+2 1aeea9e8c4b45f670a57077df581d73bd09f53ee320549542092bf5d256c36d2 : 8/8, failure-penalized steps 557.375
+3 a6f6f9e8338d0a96017b9b7518c57c933062dfeeaa0c158c01f7535658fe1e2e : 6/8, failure-penalized steps 13003.0
+
+Total search cost: 24 tuning episodes, 13754 actual engine steps. Token cost unknown (not supplied by platform).

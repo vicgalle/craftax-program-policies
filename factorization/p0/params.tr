@@ -1,0 +1,28 @@
+// params.tr: the program's answers to the machine's queries (I/exports/core.txt).
+// The world model, the search and the movement primitive are generic; where
+// the target specialised them to the route (which floors to fight through,
+// which shooters to price in which phase), they now ask the program.
+
+const ICETRIP_FLINE = 1;
+
+/* Dungeon, Sewers and Vaults: a mob in a corridor is an obstacle to fight
+ * through, not a wall (the search may cross it; the first step strikes it). */
+def int path_through() { return a.level==1 || a.level==3 || a.level==4; }
+
+/* Before the Troll Mines, ranged mobs on floors 1-4 are priced by their firing lines. */
+def int wm_early() { return !a.floors[5].seen && a.level>=1 && a.level<=4; }
+
+/* Guarding in the Troll Mines: deep things' row and column lines are priced. */
+def int wm_shooter_guard() { return a.level==5 && mines_guard(); }
+
+/* Icetrip on Fire: elementals' clear lines are priced. */
+def int wm_fire_line() { return ICETRIP_FLINE && a.level==6 && icetrip(); }
+
+/* Troll phase: a slimeball-sized health loss is attributed to an unseen deep thing. */
+def int wm_slime_attrib() { return TB12 && a.level==5 && troll_phase(); }
+
+/* Arriving in the Troll Mines while guarding: the arrival health loss tells which trolls struck. */
+def int wm_arrival_guard() { return o.level==5 && mines_guard(); }
+
+/* Potion identification: below full health, a colour that changed nothing is not the healing one. */
+def int wm_potion_restore() { return o.level==5; }

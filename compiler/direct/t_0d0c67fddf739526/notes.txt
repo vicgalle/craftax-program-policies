@@ -1,0 +1,85 @@
+Independent direct search for t_0d0c67fddf739526
+
+Known structure: acquire wood14/iron4 with wood3/iron3 reserves;
+reach floor3; acquire wood14/iron5 with wood6/iron3 reserves.
+
+Boundaries and cost
+Read both allowed baseline result JSONs completely and their four baseline
+rows.csv files. Read reference.py/incumbent.py, compiler.py, run.py,
+search.py, audit.py, allowed old resource diagnostics, and frozen policy/API
+sources. No other task, new shared/direct source, validation feedback, or
+held-out world result was inspected. Wrote authored files only under this
+goal's direct directory; other outputs are produced by the approved CLI.
+Used exactly three candidate evaluations: each eight tuning episodes at
+seed2030000000, horizon50000, workers3. No additional rollout or trace runs.
+Each candidate was immutable after its CLI archive was created. The CLI
+performs audits and preflight compilation before evaluation. Parent owns
+selection and later testing. Token cost is not supplied by the platform.
+
+Baseline observations
+Original: 2/8 successes, two violations, FPS42811.375.
+Guards: 3/8 successes, no violations, FPS39257.25.
+Reference: 1/8 success, no violations, FPS44506.25.
+Incumbent: 1/8 success, no violations, FPS45935.
+The guarded baseline includes one stage0-complete timeout, while four
+worlds die before stage0 completes. Incumbent has several stage0-complete
+timeouts. Old resource diagnostics identify actual blocked station/armour
+spending, so productive reserve-safe replenishment is a plausible fix.
+
+Candidate1 reasoning and feedback
+Kept inherited preparation while stage0 lacked tier3 pick/sword. Once
+eligible, required wood18/iron5, gathered from current/remembered floors,
+and used explicit clear-floor travel, hostile hunting, frontier exploration,
+and mine lighting. Intended to carry final stock before the reach stage.
+Observed: 0/8 successes, no violations, eight deaths, FPS50000,
+mean progress0.25, actual182456 steps. Own rows show only shallow progress
+and large wood stocks in several failures. This is consistent with extra
+iron demand/search delaying descent, but rows alone do not isolate cause.
+
+Candidate2 reasoning and feedback
+Removed the global iron5 requirement before reaching the mines. Required
+tier3 equipment across stages, supplied reserve-safe local crafting inputs,
+stocked wood18 on the surface and sought iron5 locally on floor2. Retained
+explicit hunting/navigation and mine lighting. Intended to avoid candidate1's
+early stock bottleneck without sacrificing equipment.
+Observed: 0/8 successes, no violations, eight deaths, FPS50000,
+mean progress0.25, actual110696 steps. Early interventions materially changed
+initial development; several episodes died on floor1, while one suffered
+many floor changes on floor2. Extra preparation/supply and explicit hunting
+were not successful in these tuning trials.
+
+Candidate3 reasoning
+Preserves guarded-base behavior throughout stage0: immediately returns -1
+until the first acquire completes. Afterwards restores wood buffers, routes
+up immediately when above the target, retains inherited combat and mine gear
+preparation, replenishes local iron/coal for reserve-safe mine crafting,
+and directly routes only clear floors. Final acquire uses current/remembered
+resources. Missing clear-floor routes use frontier walking and mine lighting.
+This makes a conservative change to the baseline whose three successes
+occurred after substantial preparation rather than early explicit control.
+
+Candidate3 feedback
+Observed: 3/8 successes, no violations, one timeout, four deaths,
+FPS38873.125, mean progress0.4166666666666667, actual167021 steps.
+The four pre-stage0 deaths match guarded-baseline rows, confirming that
+initial behavior is preserved there. The same three baseline-success
+worlds succeed earlier (19477,18861,22647 steps versus baseline
+19760,21567,22731). The stage0-complete timeout remains; its final wood3
+shows that the eligible controller has not eliminated all reserve stalls.
+No causal claims beyond the observed rows are made.
+
+Closure and provenance
+The approved candidate3 CLI created closed.json with search_closed=true,
+validation_feedback_used=false. All three audits passed. No selected.py
+was authored and no candidate was selected by this agent.
+
+candidate1 source SHA256:
+313c1a057b9ebe44f0243d5b8b4de20fef966a336650416ad710058339dce301
+candidate2 source SHA256:
+b2ceb5a959754a54781a5909a446122c9b1efc07fa70b1486f311874f8a04728
+candidate3 source SHA256:
+a47864c1f1b285617257bc8528396bb39fe8bc44ee18e6c46cc36d0a819f20f3
+
+Total search cost: 24 tuning episodes, 460173 actual engine steps.
+Evaluation seconds recorded by the CLI: 8.261603541999648,
+4.138696875001187,4.2963149579991295. Compilation is additional.

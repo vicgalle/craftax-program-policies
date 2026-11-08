@@ -1,0 +1,22 @@
+{
+  "name": "t_88a47e9abd18ed99",
+  "sequence": [
+    {
+      "reach": 3
+    },
+    {
+      "reach": 2
+    },
+    {
+      "acquire": {
+        "wood": 8
+      },
+      "maintain": {
+        "wood": 3
+      }
+    },
+    {
+      "reach": 1
+    }
+  ]
+}

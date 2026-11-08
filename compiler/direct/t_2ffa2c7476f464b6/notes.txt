@@ -1,0 +1,29 @@
+Independent direct search for t_2ffa2c7476f464b6.
+Known task: acquire iron 2, maintain iron 1, then reach floor 1.
+Only this task, its two complete baseline JSONs and their four arms' baseline rows, public controller/harness/frozen API sources, and permitted old resource diagnostics informed this search. No new shared/direct controller, other goal, validation feedback, or held-out test-world outcome was inspected.
+
+Baseline tuning feedback (8 worlds, seed 2030000000, horizon 50000):
+original: 5/8, 3 violations, failure-penalized steps 21045.375.
+guards: 7/8, 1 timeout, failure-penalized steps 11884.625.
+reference: 8/8, failure-penalized steps 4158.625.
+incumbent: 8/8, failure-penalized steps 3219.625.
+Several reference/incumbent episodes acquire iron early but spend thousands of steps before descent. Given the goal stops on floor 1, full iron preparation and ordinary crafting completion are unnecessary. Active route discovery can avoid those fallback delays.
+
+Candidate 1: obtain wood then stone pick and stone sword using existing crafting skill; gather required iron; explicitly travel toward the reach target and use frontier_walk/explore when a route or resource is missing. Keep the reference's health/supply/no-hostile eligibility thresholds. Result: 8/8, no violations/timeouts/deaths, failure-penalized steps 516.25; 4130 actual total steps. Slowest episode 1521; several finish in 101-143 steps. Sources are immutable after their round starts.
+
+Candidate 2: keep the same stone gear and route logic but broaden controller eligibility to health>4 and food/drink/energy>1, allowing inherited higher-priority combat/survival rules and fixed safety shield to decide interventions. Motivation: reduce prolonged exposure to ordinary build rules when safe resource/travel actions are available. Evaluation pending.
+
+Candidate 2 result: 8/8, no violations/timeouts/deaths, failure-penalized steps 411.75; 3294 actual total steps. Broadening eligibility improved the average and the slowest episode (874 versus 1521), while preserving inherited survival priority.
+
+Candidate 3: retain candidate 2 eligibility and exploration, remove the mandatory stone sword before iron acquisition. Mining needs only the stone pick; this task finishes immediately on first Dungeon entry and has no combat/clear objective. This measures whether a further preparation reduction improves completion times. Higher-priority survival and combat remain untouched. Evaluation pending.
+
+Candidate 3 result: 8/8, no violations/timeouts/deaths, failure-penalized steps 498.875; 3991 actual total steps. Removing the sword helped several fast episodes but changed exploration/combat trajectories and produced a 1094-step episode, so it did not improve the training mean over candidate 2. This is descriptive tuning evidence; no candidate is selected here.
+
+Search closed after exactly three approved evaluations, each using --workers 3, seed 2030000000, eight episodes and horizon 50000. No additional rollouts or traces were executed. closed.json was produced by the third search call and records validation_feedback_used=false. No selected.py was written. Parent is responsible for subsequent selection and testing.
+
+Source hashes:
+candidate1.py: 337315e6c12da81969e9172874a9279c2322207d9f39c7a8213e406a63926d87; successes=8/8; failure_penalized_steps=516.25
+candidate2.py: ee22f520918d795f7740e03d57bf505c789dd15458646128ba84fb737fdbe4e5; successes=8/8; failure_penalized_steps=411.75
+candidate3.py: 0b919abc00892cb32dc69a0687c5313e706f64a91179e39a9f349bb7d65f00e7; successes=8/8; failure_penalized_steps=498.875
+
+Total tuning cost: 24 episodes, 11415 actual engine steps. Token cost unknown (not supplied by platform).

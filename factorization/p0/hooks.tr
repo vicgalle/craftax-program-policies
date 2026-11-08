@@ -1,0 +1,26 @@
+// hooks.tr: entry points besides the rules and the action filter (filter.tr).
+// The interpreter calls init at reset, observe after the world model has
+// absorbed each observation, and commit when an action is committed.
+// Translated from the target's fp_reset, fp_observe and commit_action. The goal
+// runtimes they drive (runtime_observe, sg_boundary, fp_goal_call_excursion)
+// are defs in plan.tr.
+
+/* Policy memory at reset. */
+def void init() {
+ a.last_frontier=-1;a.recovery_goal=-1;a.water_goal=-1;
+}
+
+def void observe(int changed) {
+ /* Policy memory that does not survive a floor change. */
+ if(changed){a.last_frontier=-1;a.recovery_goal=-1;a.water_goal=-1;a.recovering=0;}
+ if(a.level==5 && mines_guard())wm_attribute_damage();
+ runtime_observe();
+ sg_boundary();
+}
+
+def void commit(int action) {
+ /* A committed upward departure calls the child before the environment acts.
+  * A failed ascent retains the child until explicit abandonment or departure. */
+ if(action==ASCEND && a.runtime.depth==1 && o.level==a.runtime.frame[0].frontier)
+  fp_goal_call_excursion(0,0,o.level);
+}

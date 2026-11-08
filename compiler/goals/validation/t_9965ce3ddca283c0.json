@@ -1,0 +1,24 @@
+{
+  "name": "t_9965ce3ddca283c0",
+  "sequence": [
+    {
+      "reach": 2
+    },
+    {
+      "reach": 0
+    },
+    {
+      "acquire": {
+        "wood": 7,
+        "stone": 3
+      },
+      "maintain": {
+        "wood": 7,
+        "stone": 3
+      }
+    },
+    {
+      "reach": 2
+    }
+  ]
+}

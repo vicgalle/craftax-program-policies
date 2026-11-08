@@ -1,0 +1,41 @@
+{
+  "name": "t_10e71dc80b3d428f",
+  "sequence": [
+    {
+      "acquire": {
+        "iron": 6
+      },
+      "maintain": {
+        "iron": 3
+      }
+    },
+    {
+      "reach": 2
+    },
+    {
+      "acquire": {
+        "iron": 6
+      },
+      "maintain": {
+        "iron": 2
+      }
+    },
+    {
+      "reach": 1
+    },
+    {
+      "reach": 3
+    },
+    {
+      "reach": 0
+    },
+    {
+      "acquire": {
+        "iron": 6
+      },
+      "maintain": {
+        "iron": 1
+      }
+    }
+  ]
+}

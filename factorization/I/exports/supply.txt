@@ -1,0 +1,28 @@
+# Natives defined in the supply area (m_supply.inc, lg_ice.inc, lg_mid.inc, m_resource.inc).
+# Machine: foraging, shelters, water costs, the resource model, scratch and model views.
+forage
+recover
+sealed_in
+chamber_walls
+wall_position
+water_cost
+rm_plan_cost
+rm_plan_food
+rm_time_to_empty
+prefix_put
+fire_bounds_at
+wm_hit_damage_str
+ceilf = tr_ceilf
+# Queries: the shelter policy of recover/chamber_walls/sealed_in (m_supply.inc).
+query shelter_tables 1
+query shelter_pond 0
+query shelter_base -1
+query shelter_base_reach 0
+query shelter_kd 1
+query shelter_kn 50
+query shelter_kr 40
+query shelter_kw 25
+query shelter_wnear 0
+query shelter_wpen 0
+query shelter_bonus_cell -1
+query shelter_bonus 0

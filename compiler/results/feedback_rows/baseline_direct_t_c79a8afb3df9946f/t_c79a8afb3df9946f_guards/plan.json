@@ -1,0 +1,96 @@
+{
+  "goal": {
+    "name": "t_c79a8afb3df9946f",
+    "sequence": [
+      {
+        "acquire": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 3,
+          "iron": 6,
+          "diamond": 0
+        },
+        "maintain": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 3,
+          "iron": 1,
+          "diamond": 0
+        }
+      },
+      {
+        "reach": 1
+      },
+      {
+        "acquire": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 6,
+          "iron": 5,
+          "diamond": 0
+        },
+        "maintain": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 2,
+          "iron": 3,
+          "diamond": 0
+        }
+      },
+      {
+        "reach": 0
+      },
+      {
+        "acquire": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 6,
+          "iron": 4,
+          "diamond": 0
+        },
+        "maintain": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 2,
+          "iron": 3,
+          "diamond": 0
+        }
+      },
+      {
+        "reach": 2
+      },
+      {
+        "acquire": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 3,
+          "iron": 3,
+          "diamond": 0
+        },
+        "maintain": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 2,
+          "iron": 1,
+          "diamond": 0
+        }
+      }
+    ]
+  },
+  "arm": "guards",
+  "compiler_sha256": "b6b07d44f33f7e1e0a48c6e62ca31df2a168710a21664f6422b27edc920fddb4",
+  "controller": null,
+  "controller_sha256": null,
+  "snapshot_sha256": "b3c66554387dd0e804cab834746328459469d8077853eace6f50e3e6682c6700",
+  "sources": {
+    "floor8.tr": "a743ba9614c033bc29d08cac4f27c5be01ca0342c5d056cec946956d9f265f1d",
+    "combat.tr": "b1fd57de24eeb9346aa75a129afa944eb16210f2c4d6e9a5dc8435eea40f838c",
+    "filter.tr": "cf3e86eaac5eb3b50efa291bdb2ccc500389948405a7861e6aa1c97b217bb508",
+    "hooks.tr": "9f9b873b786a3c916f895b38d9ae57ee13ab3cfe2c470ae43ffe35f61a372730",
+    "params.tr": "ec8440dc765655fb8f53d0efb8bc0cfde588713687ef822e94f20f2316416c09",
+    "plan.tr": "85bc75eebcfe895db658581177971a967bdce5b280a5dea11f9b99ae14ea2bbe",
+    "sequence.tr": "0459ccca9959e47e972837e4efc67d40ecbb154603fa893bb1182bee6e094200",
+    "supply.tr": "0cae950048d6a9756df5fd6dc6412f9e70c8763dea421eebc3623f2fba143a4e"
+  },
+  "order_sha256": "6520c9db0ad10f22e7db633b4d8c0c92718eb2caf6b6a7f4fca557749a893902"
+}

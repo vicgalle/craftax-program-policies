@@ -1,0 +1,49 @@
+// filter.tr: the action filter, an entry point the interpreter calls on every
+// chosen action (from the rules and from commanded goals) before committing it.
+// Translated from the target's emit(): the Fire-ladder seal, movement filters
+// and the safety shield.
+
+def int filter(int action, out int skill) {
+ /* Leave the Fire ladder airlock sealed behind us (see icetrip_lock). */
+ if(action==DESCEND && ICETRIP_LOCK && icetrip() && a.level==6 && !o.sleeping && !o.resting) {
+  int seal=icetrip_seal();if(seal>=0){action=seal;skill=RECOVER;}
+ }
+ int moving=!o.sleeping && !o.resting && action>=LEFT && action<=DOWN;
+ if(moving && !known_direction(action)){action=NOOP;moving=0;}
+ float movement_damage=moving?wm_incoming_damage(action):0;
+ /* Melee enemies attack after our movement, before their own movement.
+  * When safe here, let an enemy two cells away approach instead of giving
+  * it a free hit by stepping into reach. This also preserves our facing
+  * for an immediate sword strike on the next observation. */
+ /* In Ice, an approach can establish the facing needed for three fireballs
+  * during the enemy's cooldown. Accept it only with enough mana and more
+  * than six health remaining after the predicted attack. */
+ int can_aim=o.level==7 && o.dir!=action && o.spells[0] && o.mana>=6 && movement_damage<o.health-6;
+ if(moving && !can_aim && a.enemy_count && movement_damage>0 && wm_incoming_damage(NOOP)==0) {
+  int rr=a.r+dr[action],cc=a.c+dc[action];
+  for(int i=0;i<a.enemy_count;i++) {
+   if(!a.enemies[i].kind && a.enemies[i].cooldown<=0 &&
+      abs(a.enemies[i].p/SIDE-a.r)+abs(a.enemies[i].p%SIDE-a.c)==2 &&
+      abs(a.enemies[i].p/SIDE-rr)+abs(a.enemies[i].p%SIDE-cc)==1) {
+    action=NOOP;skill=FIGHT;moving=0;break;
+   }
+  }
+ }
+ /* A slimeball costs most of a Troll Mines health bar. Do not step into a
+  * predicted shot path while the current cell is safe. */
+ if(moving && (a.level==4 || a.level==5) && movement_damage>0 && wm_incoming_damage(NOOP)==0){action=NOOP;skill=FIGHT;moving=0;movement_damage=0;}
+ /* Check the destination too: survival, crafting, and exploration can all
+  * choose a move into an attack that is not adjacent to the current cell. */
+ if(moving && movement_damage>=o.health-0.1f) {
+  int best=NOOP;float damage=wm_incoming_damage(best);
+  for(int d=LEFT;d<=DOWN;d++) {
+   int rr=a.r+dr[d],cc=a.c+dc[d];
+   if(!inside(rr,cc)||!walkable(block(rr,cc))||mob_at(cell(rr,cc)))continue;
+   float next=wm_incoming_damage(d);if(next<damage){best=d;damage=next;}
+  }
+  action=best;skill=FIGHT;
+ }
+ /* Model-predictive safety shield (full_tactics.inc). */
+ action=tx_shield(action,&skill);
+ return action;
+}

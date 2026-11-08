@@ -1,0 +1,779 @@
+{
+  "selected_checkpoints": [
+    {
+      "run": "r14_C2_0-511",
+      "seed": 53000000,
+      "n": 512,
+      "metrics": {
+        "return": {
+          "mean": 141.6748046875,
+          "lo": 136.7649497598927,
+          "hi": 146.5846596151073
+        },
+        "floor": {
+          "mean": 4.958984375,
+          "lo": 4.7654792198912945,
+          "hi": 5.1524895301087055
+        },
+        "achievements": {
+          "mean": 78.77798507462687,
+          "lo": 77.16582280806827,
+          "hi": 80.39014734118547
+        },
+        "arrival8": {
+          "mean": 12.3046875,
+          "lo": 9.736754579593224,
+          "hi": 15.4340730543161
+        },
+        "victory": {
+          "mean": 1.7578125,
+          "lo": 0.9274827345489839,
+          "hi": 3.306685273614763
+        }
+      },
+      "episode_sha256": "f9b8015e87dd54465b28bf77beeb20438da59f26243c7f7458947cc899192814",
+      "policy_sha256": {
+        "full_policy.c": "be5b3d72edf989c9461060609361cb9bf7ae63b568957565751563611304c157",
+        "full_policy.h": "669b169cfc6a2e0f904764df8d2c1b8c40352db0c4bfa2abf2bbc723f5c3bbf3",
+        "full_goals.inc": "e100a116e1cf9f36c8cb4d0d7e0a8e338f3e902288a9dfc53ca4886deb3796e7"
+      },
+      "engine_sha256": "46c84e428d6377f596be65025e29162ed6cea5b2ab941f99544f56d06f1bcf54"
+    },
+    {
+      "run": "r16_merge0_C2_0-511",
+      "seed": 53000000,
+      "n": 512,
+      "metrics": {
+        "return": {
+          "mean": 151.696796875,
+          "lo": 146.59483096498622,
+          "hi": 156.79876278501376
+        },
+        "floor": {
+          "mean": 5.376953125,
+          "lo": 5.1749788073174185,
+          "hi": 5.5789274426825815
+        },
+        "achievements": {
+          "mean": 81.55317164179104,
+          "lo": 79.9397481397635,
+          "hi": 83.16659514381858
+        },
+        "arrival8": {
+          "mean": 26.7578125,
+          "lo": 23.106627591428445,
+          "hi": 30.75517804813222
+        },
+        "victory": {
+          "mean": 4.296875,
+          "lo": 2.854448597889896,
+          "hi": 6.420026357212602
+        }
+      },
+      "episode_sha256": "0d9511e027ee0c6cb81fb95b6e30b2f790392ae8fd6049777f75c15e767613ff",
+      "policy_sha256": {
+        "full_policy.c": "b5455555141a6a3bdd4bed33132b01a4350dd0c26a268256e3fb4bf96f5dd3e4",
+        "full_policy.h": "3cdf62753c643de8447145c621fae88fbcf81c1b9bcbc18af564adcfa5ce399a",
+        "full_goals.inc": "e100a116e1cf9f36c8cb4d0d7e0a8e338f3e902288a9dfc53ca4886deb3796e7"
+      },
+      "engine_sha256": "46c84e428d6377f596be65025e29162ed6cea5b2ab941f99544f56d06f1bcf54"
+    },
+    {
+      "run": "r16_merge1_C2_0-511_rebuilt",
+      "seed": 53000000,
+      "n": 512,
+      "metrics": {
+        "return": {
+          "mean": 151.9249609375,
+          "lo": 146.80284376853226,
+          "hi": 157.04707810646775
+        },
+        "floor": {
+          "mean": 5.384765625,
+          "lo": 5.182176011610091,
+          "hi": 5.587355238389909
+        },
+        "achievements": {
+          "mean": 81.59398320895522,
+          "lo": 79.97780813860636,
+          "hi": 83.21015827930408
+        },
+        "arrival8": {
+          "mean": 27.5390625,
+          "lo": 23.847706802724964,
+          "hi": 31.56496251281686
+        },
+        "victory": {
+          "mean": 5.6640625,
+          "lo": 3.972296828169586,
+          "hi": 8.01618955989993
+        }
+      },
+      "episode_sha256": "635ab9b987f75fe7849ce2cb3ce582663822559f5ad0d160aa89d2c206cb2a08",
+      "policy_sha256": {
+        "full_policy.c": "735267b4bce5d295c231bc7d18ba9600b4663b4020523541d8f3f1f34202c754",
+        "full_policy.h": "dd46a817b95cee2c9710e82de48e2fab16938b270a408ac6788241ae0749740c",
+        "full_goals.inc": "e100a116e1cf9f36c8cb4d0d7e0a8e338f3e902288a9dfc53ca4886deb3796e7"
+      },
+      "engine_sha256": "46c84e428d6377f596be65025e29162ed6cea5b2ab941f99544f56d06f1bcf54"
+    },
+    {
+      "run": "r16_merge2_C2_0-511",
+      "seed": 53000000,
+      "n": 512,
+      "metrics": {
+        "return": {
+          "mean": 152.099375,
+          "lo": 146.96515291253309,
+          "hi": 157.23359708746693
+        },
+        "floor": {
+          "mean": 5.388671875,
+          "lo": 5.185776161539643,
+          "hi": 5.591567588460357
+        },
+        "achievements": {
+          "mean": 81.6260494402985,
+          "lo": 80.007972356708,
+          "hi": 83.24412652388901
+        },
+        "arrival8": {
+          "mean": 27.9296875,
+          "lo": 24.21879714202593,
+          "hi": 31.969304011506473
+        },
+        "victory": {
+          "mean": 5.859375,
+          "lo": 4.134810759213136,
+          "hi": 8.24139154785167
+        }
+      },
+      "episode_sha256": "0f4ec791d93aaf320f511f72b20beb128d294f9b593897766384bb928b5c0471",
+      "policy_sha256": {
+        "full_policy.c": "38e223b058e1d2a7323e839ad29ebf93d0988135d682b5e2350ca44fd58855ad",
+        "full_policy.h": "3d9481250ef8b2588fad74d5d64fd03b1ffc562a6dc87a2ce3c28dc2def3c7e3",
+        "full_goals.inc": "e100a116e1cf9f36c8cb4d0d7e0a8e338f3e902288a9dfc53ca4886deb3796e7"
+      },
+      "engine_sha256": "46c84e428d6377f596be65025e29162ed6cea5b2ab941f99544f56d06f1bcf54"
+    },
+    {
+      "run": "r16_H2048_incumbent",
+      "seed": 57000000,
+      "n": 2048,
+      "metrics": {
+        "return": {
+          "mean": 143.5825146484375,
+          "lo": 141.2096508912572,
+          "hi": 145.95537840561778
+        },
+        "floor": {
+          "mean": 5.02392578125,
+          "lo": 4.929753928391097,
+          "hi": 5.118097634108903
+        },
+        "achievements": {
+          "mean": 79.64231576492537,
+          "lo": 78.89746757852511,
+          "hi": 80.38716395132563
+        },
+        "arrival8": {
+          "mean": 13.818359375,
+          "lo": 12.391359158248113,
+          "hi": 15.380843140408853
+        },
+        "victory": {
+          "mean": 1.66015625,
+          "lo": 1.1904320813492888,
+          "hi": 2.310890827787557
+        }
+      },
+      "episode_sha256": "2376eeae9d5ca2f34cceef3c5863a8c12d3c843467eaf293372bdc2139ac4cbb",
+      "policy_sha256": {
+        "full_policy.c": "be5b3d72edf989c9461060609361cb9bf7ae63b568957565751563611304c157",
+        "full_policy.h": "669b169cfc6a2e0f904764df8d2c1b8c40352db0c4bfa2abf2bbc723f5c3bbf3",
+        "full_goals.inc": "e100a116e1cf9f36c8cb4d0d7e0a8e338f3e902288a9dfc53ca4886deb3796e7"
+      },
+      "engine_sha256": "46c84e428d6377f596be65025e29162ed6cea5b2ab941f99544f56d06f1bcf54"
+    },
+    {
+      "run": "r16_H2048_candidate",
+      "seed": 57000000,
+      "n": 2048,
+      "metrics": {
+        "return": {
+          "mean": 155.844609375,
+          "lo": 153.236382863977,
+          "hi": 158.452835886023
+        },
+        "floor": {
+          "mean": 5.52587890625,
+          "lo": 5.422066934923754,
+          "hi": 5.629690877576246
+        },
+        "achievements": {
+          "mean": 82.5137010261194,
+          "lo": 81.71271079812473,
+          "hi": 83.31469125411408
+        },
+        "arrival8": {
+          "mean": 31.4453125,
+          "lo": 29.470748049555695,
+          "hi": 33.48935569334531
+        },
+        "victory": {
+          "mean": 4.931640625,
+          "lo": 4.075318695270877,
+          "hi": 5.9567227644597365
+        }
+      },
+      "episode_sha256": "d84bd9213849e7c923bbcb6852cc7b36c26a7953bacd3d22d973667d26ab14ca",
+      "policy_sha256": {
+        "full_policy.c": "cdf30ae85a87ab4739f6fd14570777be5b5b55d2ef09a02d18fdfc23fab43c43",
+        "full_policy.h": "d12c11de13273ff6f96967eb33ad9e9750e10dbaca1ff8062d474462b5e7d0bc",
+        "full_goals.inc": "e100a116e1cf9f36c8cb4d0d7e0a8e338f3e902288a9dfc53ca4886deb3796e7"
+      },
+      "engine_sha256": "46c84e428d6377f596be65025e29162ed6cea5b2ab941f99544f56d06f1bcf54"
+    }
+  ],
+  "final_paired_secondary": {
+    "return": {
+      "mean": 12.2620947265625,
+      "lo": 9.188064465620336,
+      "hi": 15.336124987504665
+    },
+    "floor": {
+      "mean": 0.501953125,
+      "lo": 0.3782768887339671,
+      "hi": 0.6256293612660329
+    },
+    "achievement_count": {
+      "mean": 1.923828125,
+      "lo": 1.3200950415724222,
+      "hi": 2.527561208427578
+    },
+    "victory_percentage_points": {
+      "mean": 3.271484375,
+      "lo": 2.193516841239707,
+      "hi": 4.349451908760293
+    }
+  },
+  "final_victory_pairs": {
+    "gains": 98,
+    "losses": 31
+  },
+  "final_victory_given_arrival": {
+    "incumbent": {
+      "mean": 12.014134275618375,
+      "lo": 8.726035867330298,
+      "hi": 16.319703662779702
+    },
+    "candidate": {
+      "mean": 15.683229813664596,
+      "lo": 13.079091455916863,
+      "hi": 18.694354398748846
+    }
+  },
+  "historical": [
+    {
+      "stage": "initial",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 54.9125,
+          "lo": 46.4349553889125,
+          "hi": 63.390044611087504
+        },
+        "floor": {
+          "mean": 1.5625,
+          "lo": 1.2177112245948396,
+          "hi": 1.9072887754051604
+        },
+        "achievements": {
+          "mean": 48.600746268656714,
+          "lo": 44.039820335667414,
+          "hi": 53.16167220164601
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "git_revision": "a7cff03e61a5958b6126e3119f64aeb2a691e74c"
+      }
+    },
+    {
+      "stage": "round1",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 64.32916666666667,
+          "lo": 53.95876735419474,
+          "hi": 74.6995659791386
+        },
+        "floor": {
+          "mean": 1.8541666666666667,
+          "lo": 1.4415552124207371,
+          "hi": 2.2667781209125963
+        },
+        "achievements": {
+          "mean": 52.39427860696517,
+          "lo": 47.31449360850406,
+          "hi": 57.47406360542629
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round2.json",
+        "archive_sha256": "14c3fa2aab1778a5290e9795b55522e1ad335a51fec2655c57021ad74c8f792a",
+        "source_keys": [
+          "baseline_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round2",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 71.89166668749999,
+          "lo": 60.112141057607246,
+          "hi": 83.67119231739274
+        },
+        "floor": {
+          "mean": 2.1458333333333335,
+          "lo": 1.6826681672854222,
+          "hi": 2.6089984993812445
+        },
+        "achievements": {
+          "mean": 55.441542288557216,
+          "lo": 49.97700128550108,
+          "hi": 60.90608329161335
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round2.json",
+        "archive_sha256": "14c3fa2aab1778a5290e9795b55522e1ad335a51fec2655c57021ad74c8f792a",
+        "source_keys": [
+          "program_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round3",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 79.32916666666667,
+          "lo": 66.8490827744464,
+          "hi": 91.80925055888693
+        },
+        "floor": {
+          "mean": 2.5416666666666665,
+          "lo": 2.0330515837203653,
+          "hi": 3.0502817496129677
+        },
+        "achievements": {
+          "mean": 57.898009950248756,
+          "lo": 52.18838883236332,
+          "hi": 63.60763106813419
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round3.json",
+        "archive_sha256": "d3c961318db510d09bdc6ec864ccb926c206f849eafc90290f0d7a4c98f391cc",
+        "source_keys": [
+          "program_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round4",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 71.5583333125,
+          "lo": 59.71983067743932,
+          "hi": 83.39683594756067
+        },
+        "floor": {
+          "mean": 2.1875,
+          "lo": 1.7074842552079912,
+          "hi": 2.667515744792009
+        },
+        "achievements": {
+          "mean": 54.788557213930346,
+          "lo": 49.2324791355806,
+          "hi": 60.344635292280095
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round4.json",
+        "archive_sha256": "fe4d94bf518a343b9a95a68577539af936f04e1c848e285f741b9743b05e377e",
+        "source_keys": [
+          "program_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round5",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 71.5583333125,
+          "lo": 59.71983067743932,
+          "hi": 83.39683594756067
+        },
+        "floor": {
+          "mean": 2.1875,
+          "lo": 1.7074842552079912,
+          "hi": 2.667515744792009
+        },
+        "achievements": {
+          "mean": 54.788557213930346,
+          "lo": 49.2324791355806,
+          "hi": 60.344635292280095
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round5.json",
+        "archive_sha256": "fcb0bf82a0c3ec7f038f5c486f0f19c2b88807270d887d7a93c4d9a3c906dac7",
+        "source_keys": [
+          "program_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round6",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 73.16249997916667,
+          "lo": 60.36430255383046,
+          "hi": 85.96069740450288
+        },
+        "floor": {
+          "mean": 2.25,
+          "lo": 1.7329454670241038,
+          "hi": 2.767054532975896
+        },
+        "achievements": {
+          "mean": 55.13059701492537,
+          "lo": 49.41802155721026,
+          "hi": 60.84317247264048
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round6.json",
+        "archive_sha256": "fd4223d7f6290abefe58cfdf1b60baa95ea1e43c7f4d5c0eda158ec8bbfdb2e3",
+        "source_keys": [
+          "program_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round7",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 73.32916664583333,
+          "lo": 60.402969360824116,
+          "hi": 86.25536393084253
+        },
+        "floor": {
+          "mean": 2.25,
+          "lo": 1.7329454670241038,
+          "hi": 2.767054532975896
+        },
+        "achievements": {
+          "mean": 55.16169154228856,
+          "lo": 49.43217371041689,
+          "hi": 60.891209374160226
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round7.json",
+        "archive_sha256": "5e127c1a1eb3f0a5b487a7957817ee66802dc7c586d8b11576a9c301323fcc7a",
+        "source_keys": [
+          "program_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round8",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 73.22499997916667,
+          "lo": 60.37962662867089,
+          "hi": 86.07037332966244
+        },
+        "floor": {
+          "mean": 2.25,
+          "lo": 1.7329454670241038,
+          "hi": 2.767054532975896
+        },
+        "achievements": {
+          "mean": 55.16169154228856,
+          "lo": 49.43217371041689,
+          "hi": 60.891209374160226
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round8.json",
+        "archive_sha256": "59d87b6c8a485320983215ae8bc7bf43385329a86fedc8b3fccbeaef760f8bfe",
+        "source_keys": [
+          "program_provenance",
+          "source"
+        ]
+      }
+    },
+    {
+      "stage": "round9",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 73.22499997916667,
+          "lo": 60.37962662867089,
+          "hi": 86.07037332966244
+        },
+        "floor": {
+          "mean": 2.25,
+          "lo": 1.7329454670241038,
+          "hi": 2.767054532975896
+        },
+        "achievements": {
+          "mean": 55.16169154228856,
+          "lo": 49.43217371041689,
+          "hi": 60.891209374160226
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round9.json",
+        "archive_sha256": "d2a0e425740bd1db903f224beedb2a6ce767637df59eb465fdc05db3a5231cca",
+        "source_keys": [
+          "program_provenance",
+          "sources"
+        ]
+      }
+    },
+    {
+      "stage": "round10",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 72.454166625,
+          "lo": 60.11055695310048,
+          "hi": 84.79777629689951
+        },
+        "floor": {
+          "mean": 2.2083333333333335,
+          "lo": 1.7167431241080615,
+          "hi": 2.6999235425586052
+        },
+        "achievements": {
+          "mean": 55.03731343283582,
+          "lo": 49.37126469417461,
+          "hi": 60.703362171497034
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "archive": "benchmarks/full_policy_round10.json",
+        "archive_sha256": "03965149d0d1b9dbdb1320974dfd2ade6a45967efe7022cffbb2e59bfc27d5d9",
+        "source_keys": [
+          "program_sources"
+        ]
+      }
+    },
+    {
+      "stage": "baseline",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 72.454166625,
+          "lo": 60.11055695310048,
+          "hi": 84.79777629689951
+        },
+        "floor": {
+          "mean": 2.2083333333333335,
+          "lo": 1.7167431241080615,
+          "hi": 2.6999235425586052
+        },
+        "achievements": {
+          "mean": 55.03731343283582,
+          "lo": 49.37126469417461,
+          "hi": 60.703362171497034
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "git_revision": "8d58469339aa40f1c01a20b43f1ee7c8e067cc1a"
+      }
+    },
+    {
+      "stage": "framework",
+      "n": 48,
+      "metrics": {
+        "return": {
+          "mean": 72.454166625,
+          "lo": 60.11055695310048,
+          "hi": 84.79777629689951
+        },
+        "floor": {
+          "mean": 2.2083333333333335,
+          "lo": 1.7167431241080615,
+          "hi": 2.6999235425586052
+        },
+        "achievements": {
+          "mean": 55.03731343283582,
+          "lo": 49.37126469417461,
+          "hi": 60.703362171497034
+        },
+        "arrival8": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        },
+        "victory": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 7.41026511527422
+        }
+      },
+      "origin": {
+        "git_revision": "e2e74d3015d4710c3ee69a6335611b97261554e2"
+      }
+    }
+  ],
+  "early_stages_in_text": [
+    "initial",
+    "round1",
+    "round3",
+    "round10"
+  ],
+  "history_sha256": "f358287da0bf9e6deb88dceea1c50354a059f954d7b33f26e3af3fd6535a6581",
+  "intervals": "Wilson for arrival and Necromancer victory probabilities; mean +/-1.96 sample SE for other metrics and paired differences. Pointwise, over worlds.",
+  "displayed_intervals": "Error bars are displayed for all plotted development and final-test checkpoints. Earlier 48-world snapshots are verified and retained here but not plotted.",
+  "interpretation": "Six selected checkpoints across two separate cohorts: four development snapshots on 512 shared worlds and two final policies on 2048 paired worlds. No lines connect cohorts. Round1 is an archived refinement, not a verified single-prompt policy."
+}

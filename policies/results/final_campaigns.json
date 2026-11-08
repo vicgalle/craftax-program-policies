@@ -1,0 +1,458 @@
+{
+  "common": {
+    "baseline": {
+      "n": 2048,
+      "k": 940,
+      "rate": 45.8984375,
+      "lo": 43.74990817350111,
+      "hi": 48.06232528545595
+    },
+    "candidate": {
+      "n": 2048,
+      "k": 1034,
+      "rate": 50.48828125,
+      "lo": 48.323983673917915,
+      "hi": 52.65075043811102
+    },
+    "gain_pp": 4.58984375,
+    "lo_pp": 2.4414597050689,
+    "hi_pp": 6.7382277949311,
+    "gained": 301,
+    "lost": 207,
+    "p": 3.515872385731021e-05
+  },
+  "common_checkpoints": {
+    "r14": {
+      "arrival8": {
+        "n": 2048,
+        "k": 309,
+        "rate": 15.087890625,
+        "lo": 13.603119925846393,
+        "hi": 16.703391064085768
+      },
+      "victory": {
+        "n": 2048,
+        "k": 37,
+        "rate": 1.806640625,
+        "lo": 1.3135342724132475,
+        "hi": 2.4802088703322744
+      },
+      "victory_given_arrival": {
+        "n": 309,
+        "k": 37,
+        "rate": 11.974110032362459,
+        "lo": 8.813215675591692,
+        "hi": 16.068897189193553
+      },
+      "return": {
+        "mean": 144.71237296191407,
+        "lo": 142.29053053255964,
+        "hi": 147.1342153912685
+      },
+      "achievements": {
+        "mean": 79.83252681902985,
+        "lo": 79.06617697776818,
+        "hi": 80.59887666029152
+      }
+    },
+    "r16": {
+      "arrival8": {
+        "n": 2048,
+        "k": 618,
+        "rate": 30.17578125,
+        "lo": 28.226380560621656,
+        "hi": 32.199414491004156
+      },
+      "victory": {
+        "n": 2048,
+        "k": 117,
+        "rate": 5.712890625,
+        "lo": 4.788148959353573,
+        "hi": 6.803467079623314
+      },
+      "victory_given_arrival": {
+        "n": 618,
+        "k": 117,
+        "rate": 18.932038834951456,
+        "lo": 16.038782600063676,
+        "hi": 22.20915706817338
+      },
+      "return": {
+        "mean": 153.15390621386717,
+        "lo": 150.5116352298152,
+        "hi": 155.79617719791915
+      },
+      "achievements": {
+        "mean": 81.69309701492537,
+        "lo": 80.86823021664085,
+        "hi": 82.51796381320989
+      }
+    },
+    "modules": {
+      "arrival8": {
+        "n": 2048,
+        "k": 940,
+        "rate": 45.8984375,
+        "lo": 43.74990817350111,
+        "hi": 48.06232528545595
+      },
+      "victory": {
+        "n": 2048,
+        "k": 122,
+        "rate": 5.95703125,
+        "lo": 5.012030306908821,
+        "hi": 7.066952788082526
+      },
+      "victory_given_arrival": {
+        "n": 940,
+        "k": 122,
+        "rate": 12.978723404255318,
+        "lo": 10.980066438808885,
+        "hi": 15.278746480647094
+      },
+      "return": {
+        "mean": 164.5802685151367,
+        "lo": 161.87419591792255,
+        "hi": 167.28634111235087
+      },
+      "achievements": {
+        "mean": 84.3866604477612,
+        "lo": 83.55274686116584,
+        "hi": 85.22057403435656
+      }
+    },
+    "recursive": {
+      "arrival8": {
+        "n": 2048,
+        "k": 1034,
+        "rate": 50.48828125,
+        "lo": 48.323983673917915,
+        "hi": 52.65075043811102
+      },
+      "victory": {
+        "n": 2048,
+        "k": 183,
+        "rate": 8.935546875,
+        "lo": 7.775742821681651,
+        "hi": 10.249118356686111
+      },
+      "victory_given_arrival": {
+        "n": 1034,
+        "k": 183,
+        "rate": 17.69825918762089,
+        "lo": 15.492758774232543,
+        "hi": 20.142891213202923
+      },
+      "return": {
+        "mean": 166.9830273017578,
+        "lo": 164.24027240959657,
+        "hi": 169.72578219391903
+      },
+      "achievements": {
+        "mean": 84.88587336753731,
+        "lo": 84.04402063650963,
+        "hi": 85.727726098565
+      }
+    }
+  },
+  "campaigns": {
+    "r1": {
+      "directory": "push50_final",
+      "selected": "identity_troll_scope",
+      "decision": "retain_incumbent",
+      "baseline": {
+        "n": 4096,
+        "k": 1951,
+        "rate": 47.6318359375,
+        "lo": 46.10523856317039,
+        "hi": 49.16287130722071
+      },
+      "candidate": {
+        "n": 4096,
+        "k": 1982,
+        "rate": 48.388671875,
+        "lo": 46.860443505894715,
+        "hi": 49.91991991107243
+      },
+      "gain_pp": 0.7568359375,
+      "lo_pp": -0.3560575083488551,
+      "hi_pp": 1.8697293833488553,
+      "gained": 286,
+      "lost": 255,
+      "p": 0.19707417295217158
+    },
+    "r2": {
+      "directory": "push50_recursive2",
+      "selected": "benchmarks/push50_recursive2/candidates/memory_combat",
+      "decision": "retain_incumbent",
+      "baseline": {
+        "n": 4096,
+        "k": 1929,
+        "rate": 47.0947265625,
+        "lo": 45.5694998918753,
+        "hi": 48.625397784171504
+      },
+      "candidate": {
+        "n": 4096,
+        "k": 1979,
+        "rate": 48.3154296875,
+        "lo": 46.78734381180457,
+        "hi": 49.84667248775199
+      },
+      "gain_pp": 1.220703125,
+      "lo_pp": -0.05574425140896736,
+      "hi_pp": 2.497150501408967,
+      "gained": 381,
+      "lost": 331,
+      "p": 0.06623011476868325
+    },
+    "r3": {
+      "directory": "push50_recursive3",
+      "selected": "response_cover",
+      "decision": "promote_candidate",
+      "baseline": {
+        "n": 1024,
+        "k": 455,
+        "rate": 44.43359375,
+        "lo": 41.4165574460644,
+        "hi": 47.4922393957836
+      },
+      "candidate": {
+        "n": 1024,
+        "k": 494,
+        "rate": 48.2421875,
+        "lo": 45.19386840913864,
+        "hi": 51.303646383023896
+      },
+      "gain_pp": 3.80859375,
+      "lo_pp": 0.7117714448261668,
+      "hi_pp": 6.905416055173832,
+      "gained": 151,
+      "lost": 112,
+      "p": 0.018948763288162064,
+      "against_parent": {
+        "baseline": {
+          "n": 1024,
+          "k": 489,
+          "rate": 47.75390625,
+          "lo": 44.708603846777656,
+          "hi": 50.815998387652236
+        },
+        "candidate": {
+          "n": 1024,
+          "k": 494,
+          "rate": 48.2421875,
+          "lo": 45.19386840913864,
+          "hi": 51.303646383023896
+        },
+        "gain_pp": 0.48828125,
+        "lo_pp": -2.472082269292899,
+        "hi_pp": 3.448644769292899,
+        "gained": 122,
+        "lost": 117,
+        "p": 0.795902390098411
+      }
+    },
+    "r4": {
+      "directory": "push50_recursive4",
+      "selected": "root_route_value",
+      "decision": "retain_incumbent",
+      "baseline": {
+        "n": 1024,
+        "k": 504,
+        "rate": 49.21875,
+        "lo": 46.16527018992872,
+        "hi": 52.27806971769907
+      },
+      "candidate": {
+        "n": 1024,
+        "k": 495,
+        "rate": 48.33984375,
+        "lo": 45.29095624757659,
+        "hi": 51.401141056132474
+      },
+      "gain_pp": -0.87890625,
+      "lo_pp": -3.070059557206872,
+      "hi_pp": 1.3122470572068718,
+      "gained": 61,
+      "lost": 70,
+      "p": 0.48472021812853044
+    },
+    "r5": {
+      "directory": "push50_recursive5",
+      "selected": "compose_model_children",
+      "decision": "retain_incumbent",
+      "baseline": {
+        "n": 1024,
+        "k": 527,
+        "rate": 51.46484375,
+        "lo": 48.40390450421613,
+        "hi": 54.51483316898178
+      },
+      "candidate": {
+        "n": 1024,
+        "k": 523,
+        "rate": 51.07421875,
+        "lo": 48.0141351944927,
+        "hi": 54.126272432519094
+      },
+      "gain_pp": -0.390625,
+      "lo_pp": -1.0535676670711698,
+      "hi_pp": 0.2723176670711699,
+      "gained": 4,
+      "lost": 8,
+      "p": 0.3876953125
+    }
+  },
+  "tokens": {
+    "responses": 1666,
+    "input": 200421568,
+    "cached": 197896448,
+    "output": 705217,
+    "reasoning": 316622
+  },
+  "early_termination_records_equal": 526,
+  "sources_sha256": {
+    "benchmarks/policy_lineage/recursive/seed81000000/recursive.csv.gz": "338ec6e2a652df8c5ae6dd06f31991f3eee78707218c5ec5c3d30c8489bc3bd0",
+    "benchmarks/policy_lineage/modules/seed81000000/modules.csv.gz": "93bae91ec2f854d538e4ec47d341e395e5f20fd28e39a10d128ea18a5769d390",
+    "benchmarks/policy_lineage/seed81000000/r14.csv.gz": "a599142ddca75ae24b430f42a8c23a51ce8228bab388ca6f3f54d614efb0822e",
+    "benchmarks/policy_lineage/seed81000000/r16.csv.gz": "8a2548c12c79a76f730b62b6d09f6863c791fcc5d5f73a82d097e4972447c303",
+    "benchmarks/push50_final/runs/baseline_final.csv": "ee208fcd0edf987cdde8f5e664e78b6042ffba9b33215e1edd3405b7e9c15e2d",
+    "benchmarks/push50_final/runs/candidate_final.csv": "b2fccdef18469da879d93fb9a4e1343e4ae163914fd3bd632711906c31d7bfeb",
+    "benchmarks/push50_recursive2/runs/baseline_final/rows.csv": "11dc27ac2dbf53f9d0c1740d0ed8d7f11e3a48e1f99d3a539ee853bb3e3ff443",
+    "benchmarks/push50_recursive2/runs/candidate_final/rows.csv": "dc7cfc58151d595d0ce357a94f9c529ef19d42a3d36195b4781597fb89ae6be3",
+    "benchmarks/push50_recursive3/runs/baseline_final/rows.csv": "d3b3b422b7fdb2a19c311ff08d2afb011aee485a5d4124159f4d705dc84f4fd4",
+    "benchmarks/push50_recursive3/runs/candidate_final/rows.csv": "3438bdeffa5e7821dd67e1879d32814bc9865cc98a4acba82e6cdcc66197c815",
+    "benchmarks/push50_recursive3/runs/parent_final/rows.csv": "376334871a77e845854b9cbfe606040dca0885d6cc00caba6c948a581e4fa61b",
+    "benchmarks/push50_recursive4/runs/baseline_final/rows.csv": "2f2bbf473664f23916bc2de5d2bfccb618303e3f919a50a0464fd5464c8af42e",
+    "benchmarks/push50_recursive4/runs/candidate_final/rows.csv": "50aa0cc17369885aba65541051dba2b9f4682564657156beebec312cd8f642ce",
+    "benchmarks/push50_recursive5/runs/baseline_final/rows.csv": "667465a3c6543432e764e133b2088efcf8177cc6bdf91e2cb82e2c4e7d430d8a",
+    "benchmarks/push50_recursive5/runs/candidate_final/rows.csv": "fe44b2a4871dd5f0dc51b52e7ba452efcbf14184d93fe0bbc40e94a17a6357f2"
+  },
+  "common_world_overlap_with_optimization": {
+    "benchmarks/push50_final/runs/identity_troll_scope_dev.csv": 0,
+    "benchmarks/push50_final/runs/recursive_combo_dev.csv": 0,
+    "benchmarks/push50_final/runs/candidate_final.csv": 0,
+    "benchmarks/push50_final/runs/baseline_dev.csv": 0,
+    "benchmarks/push50_final/runs/identity_model_conf.csv": 0,
+    "benchmarks/push50_final/runs/baseline_final.csv": 0,
+    "benchmarks/push50_final/runs/shelter_conf.csv": 0,
+    "benchmarks/push50_final/runs/baseline_conf.csv": 0,
+    "benchmarks/push50_final/runs/memory_shelter_dev.csv": 0,
+    "benchmarks/push50_recursive2/runs/baseline_reset401/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/combat_combo_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/baseline_parity/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/kill_first_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/resource_model_v2_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/resource_model_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/memory_combat_reset402/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/prefix_parity/memory_combat.csv": 0,
+    "benchmarks/push50_recursive2/runs/prefix_parity/incumbent.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_fighter_v2_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/memory_combat.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/typed_threat_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/combat_combo_reset401/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_risk15_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/baseline_reset402/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/typed_threat_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/baseline_final/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/combat_combo.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/observed_damage_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/memory_combat_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/memory_combat_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/kill_first_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/memory_combat_reset401/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_prevent_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_exchange_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/candidate_final/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_actions_v2_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_actions_v2_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_prevent_conf400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/observed_damage_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/damage_priority_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/combat_combo_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/spell_exchange_dev400/rows.csv": 0,
+    "benchmarks/push50_recursive2/runs/combat_combo_reset402/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/response_cover_reset/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_ice_fight.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/departure_clear_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/response_light_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_ice_fight_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_evasive_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_realms_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/cover_ice_reset/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/cover_ice.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_fight_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/response_cover_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_aim_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/baseline_final/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/shelter_stone_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/shelter_ladder_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/cover_ice_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/cover_angles_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_ice_fight_reset/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/parent_final/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/response_cover.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/candidate_final/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/cover_proactive_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/response_escape_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_cautious_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_progress_bank/rows.csv": 0,
+    "benchmarks/push50_recursive3/runs/engage_finish_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_provision_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_fire_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_nav_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_value_reset/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_meal_model_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_value.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_meal_model_reset/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/compose_route_meal.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_sleep_refill_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_provision_local_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_noexit_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_landing_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_sleep_budget_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/baseline_final/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_meal_wait_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/compose_route_meal_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_model_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_value_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_all_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_provision_owner_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/candidate_final/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/root_route_owner_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_meal_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_meal_model.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_meal_contract_bank/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/compose_route_meal_reset/rows.csv": 0,
+    "benchmarks/push50_recursive4/runs/fresh_provision_full_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_readiness_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/baseline_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_identify_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_heal_shield_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_contact_memory_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_joint_recovery_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/compose_model_consumables_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/compose_model_children_reset/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_ranged_expectation.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_consumables_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_ranged_expectation_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_pending_cast_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_ranged_expectation_reset/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_heal_contract_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_reforge_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/baseline_final/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/compose_model_children.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_consumables_reset/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_consumables.native_parity/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/candidate_final/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_dual_element_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/compose_model_children_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_projectile_pool_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/fresh_energy_only_bank/rows.csv": 0,
+    "benchmarks/push50_recursive5/runs/root_contact_sampled_bank/rows.csv": 0,
+    "benchmarks/push50/banks/c2dev/episodes.csv": 0,
+    "benchmarks/push50/banks/c2conf/episodes.csv": 0
+  },
+  "interpretation": "Regenerate recursive-refinement metrics from archived paired episode rows.\n\nThe common-cohort placement is descriptive and uses full episodes. Each of the\nfive optimization campaigns has its own frozen comparison, stopping at floor 8.\nKeep those cohorts separate; never select a policy or pool them here."
+}

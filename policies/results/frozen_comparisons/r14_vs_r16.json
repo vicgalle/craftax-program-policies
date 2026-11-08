@@ -1,0 +1,106 @@
+{
+  "seed": 57000000,
+  "paired_worlds": 2048,
+  "horizon": 100000,
+  "rates": {
+    "incumbent": {
+      "arrivals": 283,
+      "worlds": 2048,
+      "estimate": 0.13818359375,
+      "wilson95": [
+        0.12391359158248114,
+        0.15380843140408854
+      ],
+      "mean_return": 143.5825146484375,
+      "boss_wins": 34
+    },
+    "candidate": {
+      "arrivals": 644,
+      "worlds": 2048,
+      "estimate": 0.314453125,
+      "wilson95": [
+        0.29470748049555695,
+        0.33489355693345313
+      ],
+      "mean_return": 155.844609375,
+      "boss_wins": 101
+    }
+  },
+  "difference": {
+    "estimate": 0.17626953125,
+    "ci95": [
+      0.1526391062595027,
+      0.1998999562404973
+    ],
+    "gains": 517,
+    "losses": 156,
+    "mcnemar_p": 4.745182651606362e-46
+  },
+  "funnel": {
+    "incumbent": {
+      "reach": [
+        2048,
+        2010,
+        1893,
+        1699,
+        1553,
+        1344,
+        809,
+        698,
+        283
+      ],
+      "conditional": [
+        0.9814453125,
+        0.9417910447761194,
+        0.8975171685155837,
+        0.9140670982931136,
+        0.8654217643271088,
+        0.6019345238095238,
+        0.8627935723114957,
+        0.4054441260744986
+      ]
+    },
+    "candidate": {
+      "reach": [
+        2048,
+        2005,
+        1869,
+        1710,
+        1621,
+        1465,
+        1048,
+        955,
+        644
+      ],
+      "conditional": [
+        0.97900390625,
+        0.9321695760598504,
+        0.9149277688603531,
+        0.947953216374269,
+        0.9037631091918569,
+        0.715358361774744,
+        0.9112595419847328,
+        0.6743455497382199
+      ]
+    }
+  },
+  "all_sources_match_freeze": true,
+  "interpretation": "Policy comparison only; no matched-budget estimate of the HHMM harness effect.",
+  "native_parity": {
+    "seed": 57000000,
+    "episodes": 64,
+    "horizon": 100000,
+    "fields": [
+      "world_seed",
+      "achievements",
+      "length",
+      "max_level",
+      "boss_progress",
+      "defeat_necromancer",
+      "return (absolute tolerance 0.001)"
+    ],
+    "mismatches": [],
+    "localization_errors": 0,
+    "result": "PASS"
+  }
+}

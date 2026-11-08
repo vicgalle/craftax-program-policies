@@ -1,0 +1,16 @@
+{
+  "name": "t_e12db20321f8471e",
+  "sequence": [
+    {
+      "acquire": {
+        "wood": 6
+      },
+      "maintain": {
+        "wood": 6
+      }
+    },
+    {
+      "reach": 2
+    }
+  ]
+}

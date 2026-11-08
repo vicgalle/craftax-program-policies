@@ -1,0 +1,23 @@
+{
+  "program": "generated/baseline_shared/t_88a47e9abd18ed99_reference",
+  "program_image_sha256": "c3b23bdfdef6801514f41fcbc0a094fa79e10aa73dad9457cfc7e615dd482a6d",
+  "plan_sha256": "9681dddf2b5f7d8b1f6d0aebbad77fa9b8061109b7feba4e69347f35b8e30221",
+  "goal_sha256": "dc0130115122b11c45d79c88f95a99b9b29c82cd24268564a0c793c061ef5ad6",
+  "evaluator_sha256": "5a92edba9bdfb953e61d6af975246d4f5cac422ef05a44b866b33923b35c75dc",
+  "monitor_sha256": "8bffbf6523ea8cec9dbeb7efeac4eff8964859792d5f4c05c70e293a7dacd0b7",
+  "run_source_sha256": "94ef090477689969a46078a9b387ddac25430c5655147f25390db63f9c8a4c86",
+  "rows_sha256": "f62e6ecdba3286e27076755c849c3003316708a3a5218aef545445e2777d449d",
+  "binary_sha256": "13f590258d5812d1f7c9fa5a90ce370889bba77e86052292c52278d676470a31",
+  "mode": "spec",
+  "seed": 2000000000,
+  "horizon": 50000,
+  "seconds": 1.4562099160029902,
+  "episodes": 4,
+  "successes": 1,
+  "success_rate": 0.25,
+  "violations": 0,
+  "timeouts": 1,
+  "deaths": 2,
+  "mean_progress": 0.25,
+  "failure_penalized_steps": 38240.0
+}

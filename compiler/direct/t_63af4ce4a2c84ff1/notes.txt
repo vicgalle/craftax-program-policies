@@ -1,0 +1,32 @@
+Independent direct search for t_63af4ce4a2c84ff1
+
+Scope and data
+Read only this goal, both complete allowed baseline result JSONs and their rows, public reference/incumbent/compiler/run/search/audit, frozen sources for APIs, and the allowed old-task resource diagnostics. No other new shared/direct source, task, or validation/held-out outcome was read. Candidate emitters contain no imports or I/O and do not use task names or seeds. The task-intent fields are read-only; inherited survival rules remain above the insertion point.
+
+Goal-specific reasoning
+All resources are ordinary overworld wood and stone. The sequence requires wood11/stone5, reach1, wood12/stone3, reach0, wood11/stone4, with cumulative maintained stock. Carrying wood12 and stone5 can satisfy all acquire stages without an extended dungeon stay. Prompt ascent can remove the inherited policy's unrelated dungeon activity. The allowed old diagnostics warn about raw crafting costs conflicting with maintained reserves; preparation must respect those margins and should finish before direct route control replaces the base policy.
+
+Baselines on the fixed tuning worlds
+Original and guards: 8/8 success, 1365.5 failure-penalized steps.
+Reference: 7/8, 7201.5; one death.
+Incumbent: 7/8, 7550.0; one death.
+
+Candidate 1
+Explicitly craft a wood pick and stone sword, preload wood12/stone5, directly travel or explore toward floor1, and promptly return. This tests minimal preparation and carrying all delivery stock. An audit-only preflight rejection arose because its conservative alias pattern matched "&& a.intent"; reordering the comparison removed the false positive before any archive/evaluation. No evaluated source was changed.
+Training: 6/8 success, 13301.375 failure-penalized steps, zero violations, two deaths, 7700 actual engine steps. Both deaths occurred on floor0 after the first acquire stage. Minimal gear/preparation plus fallthrough under survival-ineligible conditions is insufficiently robust here. No trace/replay evaluation was performed.
+
+Candidate 2
+Preserve inherited initial preparation and first descent. After the first acquire, react to resource deficiencies if any; for the return-floor stage, ascend immediately. This retains successful baseline preparation while avoiding prolonged post-delivery behavior.
+Training: 8/8 success, 1258.75 failure-penalized steps, zero violations/deaths/timeouts, 10070 actual engine steps.
+
+Candidate 3
+Retain candidate2 initial acquisition and return control. For first descent, after an iron sword and at least a stone pick are available, preload wood12/stone5 and use direct travel, falling back to productive exploration for an unknown/unreachable ladder. This tests whether the original preparation can be safely shortened after adequate combat gear is ready.
+Training: 8/8 success, 1144.125 failure-penalized steps, zero violations/deaths/timeouts, 9153 actual engine steps. Improvements varied across worlds: shortening preparation helped six of eight worlds relative to candidate2, while two became slower. This is tuning feedback only; parent must perform all selection and later testing independently.
+
+Closure and accounting
+Exactly three evaluated candidates, each eight fixed tuning worlds at seed2030000000 and horizon50000, workers3. Total evaluated episodes24; actual engine steps26923. There were no extra rollout, trace, replay, validation, or held-out evaluations. search.py produced closed.json after candidate3. No selected.py was written. Evaluated authored files remain immutable. Token cost is unknown because no platform accounting was supplied.
+
+Candidate source SHA256 values
+1 8e8aa1af3bdd9157df02505a1df08653bc93a28ea02d3311928bb6a147e58ea1
+2 1ecf166d60dd72dce680bca89aa7784a8d52cff9dd93a27e4be94f140bc4b3c9
+3 cec0b3280498ea4edde32ff07ac036560df17e402cce1d70213d233e88228956

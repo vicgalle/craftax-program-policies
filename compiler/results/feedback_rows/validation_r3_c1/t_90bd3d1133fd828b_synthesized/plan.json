@@ -1,0 +1,59 @@
+{
+  "goal": {
+    "name": "t_90bd3d1133fd828b",
+    "sequence": [
+      {
+        "acquire": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 0,
+          "iron": 5,
+          "diamond": 0
+        },
+        "maintain": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 0,
+          "iron": 1,
+          "diamond": 0
+        }
+      },
+      {
+        "reach": 3
+      },
+      {
+        "acquire": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 0,
+          "iron": 4,
+          "diamond": 0
+        },
+        "maintain": {
+          "wood": 0,
+          "stone": 0,
+          "coal": 0,
+          "iron": 2,
+          "diamond": 0
+        }
+      }
+    ]
+  },
+  "arm": "synthesized",
+  "compiler_sha256": "b6b07d44f33f7e1e0a48c6e62ca31df2a168710a21664f6422b27edc920fddb4",
+  "controller": "synthesis/run_3/round_1/source.py",
+  "controller_sha256": "eeb0acc6076d098b4cb9dc17455e1a9401ce26771dbb1e20c3ecab38d6159d61",
+  "snapshot_sha256": "b3c66554387dd0e804cab834746328459469d8077853eace6f50e3e6682c6700",
+  "sources": {
+    "floor8.tr": "f7ec597e8b117cb375feba8ff5cde3472b5e1fd1e4698bbcbb68e0840366ef37",
+    "combat.tr": "b1fd57de24eeb9346aa75a129afa944eb16210f2c4d6e9a5dc8435eea40f838c",
+    "controller.tr": "4ce420c4a98855f56d719c94a485b80170f792b7c70d34b3e702d705b6ebd81f",
+    "filter.tr": "cf3e86eaac5eb3b50efa291bdb2ccc500389948405a7861e6aa1c97b217bb508",
+    "hooks.tr": "9f9b873b786a3c916f895b38d9ae57ee13ab3cfe2c470ae43ffe35f61a372730",
+    "params.tr": "ec8440dc765655fb8f53d0efb8bc0cfde588713687ef822e94f20f2316416c09",
+    "plan.tr": "85bc75eebcfe895db658581177971a967bdce5b280a5dea11f9b99ae14ea2bbe",
+    "sequence.tr": "52e4ddd9bb01d3c3852b10ada468f4aa4984f98e64524b01a204f72d6532eea0",
+    "supply.tr": "0cae950048d6a9756df5fd6dc6412f9e70c8763dea421eebc3623f2fba143a4e"
+  },
+  "order_sha256": "07d17739e883778da0c4be420af23ef4c952d1cb1f2e0d78b312919a141644b1"
+}

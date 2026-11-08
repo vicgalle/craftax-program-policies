@@ -1,0 +1,67 @@
+Run 5: fresh model-search context using the common training data.
+Allowed inputs read before evaluation: reference.py, incumbent.py, compiler.py,
+search.py, run.py, audit.py; frozen policy/TR primitives; all 16 train goals;
+both results/baseline_shared.json and results/baseline_shared_incumbent.json;
+diagnostics/resource_failure.md and resource_failure_evidence.json.
+No validation/test tasks or feedback were inspected.
+
+Candidate 1 hypothesis: preserve incumbent preparation for goals with deeper
+travel or iron/diamond needs. For structurally shallow simple resource tasks,
+use minimal pick preparation so coal reserves cannot trap later unnecessary
+crafting. After reserves activate, directly pursue descent and use frontier
+search when the ladder is unknown; preserve incumbent descent on reserve-free
+reach stages. Increase explicit resource search radius to 1000. Base survival
+rules remain earlier and the original calm/health/supply gate remains.
+
+Round 1: 55/64 training successes; failure-penalized mean 14593.46875;
+699477 actual steps. SHA256 432e7df5596c239893c66dfaa2be81839c56bdeb27251384043e05895c85bf49.
+Shallow coal goals both became 4/4. Direct reserved-stage initial descent lost
+successes on wood/stone maintenance goals and a wood/iron goal; survival
+climbs and subsequent descents oscillated on some worlds. This supports
+retaining more of the frozen preparation and provisioning behavior.
+
+Candidate 2: retain the structural shallow path. Restore resource radius 300.
+Replace proactive reserved-stage descent with positive-reserve top-up margins
+(wood 3, stone 2, coal/iron/diamond 3). This lets frozen recipe and station
+choices spend surplus while the guarded minimum survives; default deeper
+preparation, provisioning and descent remain in charge.
+
+Round 2: 61/64 training successes; failure-penalized mean 11150.6875;
+637184 actual steps. SHA256 8577b646f854b369e01f3614b4cd40e5defe816938e18c73a21519e15b761220.
+All wood/stone maintenance goals recovered 4/4. Remaining failures: one
+wood/iron-world death, and two coal/iron-world failures. A coal/iron timeout
+ended on floor 0 with wood 1, coal 3, iron 5 and 25402 no-ops. Its coal
+reserve was 1: the surplus still could not buy iron armour, while wood was
+not itself reserved and therefore was not being replenished by the margin
+loop. These rows cannot identify every rejected action or equipment state.
+
+Candidate 3: while reserves are active on deeper reach stages, replenish wood
+up to reserve+4 even if its reserve is zero, covering stations and a recipe.
+Search remembered deposits with radius 1000. If replenishment cannot find a
+source, explicitly search frontiers instead of immediately exposing guarded
+crafting. Wood absence below floor 0 routes upward; ore absence on cleared
+floor 1 with suitable equipment can route toward floor 2. Hunting visible
+prey on uncleared floors preserves clearing opportunities during resource
+search. Pure reach behavior and shallow structural preparation remain.
+
+Round 3: 61/64 training successes; failure-penalized mean 11113.890625;
+592244 actual steps. SHA256 5e5d24658a307d1c4f82922cee9058aea7205927b9ae91166b475cb99419477f.
+All three remaining failures were deaths (one wood/iron and two coal/iron),
+with no timeouts. The extra recovery path did not increase successful worlds;
+it shortened aggregate steps and changed the prior coal/iron timeout into a
+death. This does not establish a general improvement over candidate 2.
+
+Exactly 3 evaluated candidates, each 16 tasks x 4 worlds x 50000-action
+horizon: 192 training episodes, 1928905 total actual environment steps.
+All rounds passed the fixed source/interface audit; no monitor/guard changes.
+closed.json exists with search_closed=true and validation_feedback_used=false.
+Authored and archived source bytes/hashes were checked after closure.
+No final candidate was selected and selected.py was not authored.
+
+Limitations: only four shared training worlds; common baseline and training
+data were used by this fresh search. The rows expose outcomes and action
+counts but not every guard rejection or gear state, so causal explanations
+remain hypotheses. Fixed positive-reserve margins may gather unnecessary
+surplus; explicit missing-resource exploration may incur combat risk. Future
+validation and test selection is entirely the parent's responsibility. Token
+usage was not supplied by the platform and is not estimated here.

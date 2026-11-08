@@ -1,0 +1,20 @@
+Fresh shared search context, RUN_ID=1. Only the allowed training goals, common baseline information, controller/linker/search/audit/runtime sources, frozen policy/machine sources, and common resource-failure evidence are used. No held-out specifications/results or other searches are inspected.
+
+Candidate 1 hypothesis: keep incumbent tier-3 acquire preparation and original first-time descent, while actively repairing maintained-resource stock to a reserve-plus-recipe margin. Direct travel is used for upward targets and downward targets already visited. Gather uses a wider local radius, remembered source floors, and productive exploration/lighting if resource search has no action. Intended to prevent late guard-blocked crafting while preserving the useful original preparation route.
+
+Candidate 1 result: 50/64 success, failure-penalized steps 18454.765625, 786704 actual engine steps. Zero violations. It preserved pure reach successes but mandatory broad surplus search exhausted Overworld resource opportunities and replaced late timeouts with deaths on coal/mixed tasks. Inference from terminal rows (no extra trajectories): too much exploration while servicing a reserve can trap the controller before descent.
+
+Candidate 2: restore incumbent gather radius and no-action fallback for acquire stages. Surplus repair only uses local resources within 150 steps and otherwise yields. On reach stages, existing routes are followed directly; when any reserve is active and iron pick/sword are ready, explicit clearance, lighting and frontier navigation can bypass blocked crafting even on a first descent.
+
+Candidate 2 result: 55/64 success, failure-penalized steps 14235.28125, 632817 actual engine steps. Zero violations. Both coal-maintenance tasks became 4/4 (incumbent 1/4 and 3/4). Wood-only and wood/stone deliveries regressed with first-time explicit descent: their terminal rows show repeated floor changes and deaths. Frozen policy source shows resupply clearing/provisioning below the inserted controller, so explicit descent can interrupt an active resupply trip. This is a source-and-terminal-row inference, not extra telemetry.
+
+Candidate 3: retain local reserve repair and widen its wood-only search radius to 400. First-time descent bypass is limited to goals with active coal or iron reserves; wood/stone-only deliveries preserve the original preparation route. Downward navigation yields while the frozen resupply flag is active. Revisited targets still receive direct travel and productive route discovery.
+
+Candidate 3 result: 62/64 success, failure-penalized steps 10187.53125, 597024 actual engine steps; zero violations and zero timeouts. All 14 other tasks succeeded 4/4; the two remaining mixed-resource tasks each had one death. These results support combining reserve repair with the original preparation/resupply policy, while they do not isolate a causal component or establish held-out transfer.
+
+Closure: exactly three approved training evaluations, each 16 goals x 4 fixed worlds at 50000-action horizon, for 192 episodes and 2016545 actual environment steps total. No additional evaluator/trajectory requests. Candidate source and archived-source hashes match the immutable result records and closed.json; search_closed=true, validation_feedback_used=false. No final candidate selected, selected.py not authored, and no held-out data or other agent searches accessed. Baseline control evaluations were read before candidate 1 evaluation; shared training data is common information, so this is a fresh search context rather than independence from training data. Token usage is unavailable from this platform context.
+
+Source SHA256:
+candidate1.py 452a0fd257e8eed491e8fd0f756fb16bca458d346d965a88e259b4f84130f20e
+candidate2.py 0563cc489bcc057c7db3795d063b2f641a40b466d680f2de5763e1e7ad517d73
+candidate3.py 7de55c25d6fc032173ed2f6a0e416bb0c2b964a96a8854b49589484453c420b8

@@ -1,0 +1,28 @@
+{
+  "name": "t_0d0c67fddf739526",
+  "sequence": [
+    {
+      "acquire": {
+        "wood": 14,
+        "iron": 4
+      },
+      "maintain": {
+        "wood": 3,
+        "iron": 3
+      }
+    },
+    {
+      "reach": 3
+    },
+    {
+      "acquire": {
+        "wood": 14,
+        "iron": 5
+      },
+      "maintain": {
+        "wood": 6,
+        "iron": 3
+      }
+    }
+  ]
+}

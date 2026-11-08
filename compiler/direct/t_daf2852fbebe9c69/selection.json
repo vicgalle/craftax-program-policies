@@ -1,0 +1,50 @@
+{
+  "candidates": [
+    {
+      "candidate": 1,
+      "controller_path": "direct/t_daf2852fbebe9c69/round_1/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 17753.625,
+      "label": "direct_validation_t_daf2852fbebe9c69_c1",
+      "run_dirs": [
+        "runs/direct_validation_t_daf2852fbebe9c69_c1/t_daf2852fbebe9c69_synthesized"
+      ],
+      "sha256": "8ce68b70bbb745a56ded56956c47972e2b109cefe6990035e0bcde32c7653c9d",
+      "successes": 7
+    },
+    {
+      "candidate": 2,
+      "controller_path": "direct/t_daf2852fbebe9c69/round_2/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 28956.25,
+      "label": "direct_validation_t_daf2852fbebe9c69_c2",
+      "run_dirs": [
+        "runs/direct_validation_t_daf2852fbebe9c69_c2/t_daf2852fbebe9c69_synthesized"
+      ],
+      "sha256": "c4d0eaab3506fc3135e1126bbff44d19f9bf7e768bd09ba25b9bfec3fd3086d2",
+      "successes": 4
+    },
+    {
+      "candidate": 3,
+      "controller_path": "direct/t_daf2852fbebe9c69/round_3/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 7287.25,
+      "label": "direct_validation_t_daf2852fbebe9c69_c3",
+      "run_dirs": [
+        "runs/direct_validation_t_daf2852fbebe9c69_c3/t_daf2852fbebe9c69_synthesized"
+      ],
+      "sha256": "b6ac7ab73964558fa6080a5a21463076580424f8494d95af01aa5d3293efd602",
+      "successes": 8
+    }
+  ],
+  "closed_sha256": "258d9f850c5ea2fd66c1ea46b2a3f8f65d6bba9f1527007b4ae1d3ad19dc24b0",
+  "controller_path": "direct/t_daf2852fbebe9c69/selected.py",
+  "feedback_returned_to_search_agent": false,
+  "key": "t_daf2852fbebe9c69",
+  "mode": "direct",
+  "rule": "max successes, min failure-penalized steps, earlier candidate",
+  "selected_candidate": 3,
+  "selection_seed": 2040000000,
+  "selection_worlds": 8,
+  "sha256": "b6ac7ab73964558fa6080a5a21463076580424f8494d95af01aa5d3293efd602"
+}

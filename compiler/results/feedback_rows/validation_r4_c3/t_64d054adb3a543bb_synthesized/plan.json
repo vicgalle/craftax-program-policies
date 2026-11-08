@@ -1,0 +1,43 @@
+{
+  "goal": {
+    "name": "t_64d054adb3a543bb",
+    "sequence": [
+      {
+        "acquire": {
+          "wood": 7,
+          "stone": 0,
+          "coal": 0,
+          "iron": 5,
+          "diamond": 0
+        },
+        "maintain": {
+          "wood": 3,
+          "stone": 0,
+          "coal": 0,
+          "iron": 2,
+          "diamond": 0
+        }
+      },
+      {
+        "reach": 1
+      }
+    ]
+  },
+  "arm": "synthesized",
+  "compiler_sha256": "b6b07d44f33f7e1e0a48c6e62ca31df2a168710a21664f6422b27edc920fddb4",
+  "controller": "synthesis/run_4/round_3/source.py",
+  "controller_sha256": "e20d6fcc696dbd64a0285d9a0e98264aa30579ba7b5cd83b85cf09a086a4fffa",
+  "snapshot_sha256": "b3c66554387dd0e804cab834746328459469d8077853eace6f50e3e6682c6700",
+  "sources": {
+    "floor8.tr": "f7ec597e8b117cb375feba8ff5cde3472b5e1fd1e4698bbcbb68e0840366ef37",
+    "combat.tr": "b1fd57de24eeb9346aa75a129afa944eb16210f2c4d6e9a5dc8435eea40f838c",
+    "controller.tr": "93af7e69108cf042cac2db7334992b6beccbccc611d6e84fc311b0eb63b5f23d",
+    "filter.tr": "cf3e86eaac5eb3b50efa291bdb2ccc500389948405a7861e6aa1c97b217bb508",
+    "hooks.tr": "9f9b873b786a3c916f895b38d9ae57ee13ab3cfe2c470ae43ffe35f61a372730",
+    "params.tr": "ec8440dc765655fb8f53d0efb8bc0cfde588713687ef822e94f20f2316416c09",
+    "plan.tr": "85bc75eebcfe895db658581177971a967bdce5b280a5dea11f9b99ae14ea2bbe",
+    "sequence.tr": "37b988e6ed14b53beddca35ce779aa64a4aef9604bfca138da9e8b458aa12698",
+    "supply.tr": "0cae950048d6a9756df5fd6dc6412f9e70c8763dea421eebc3623f2fba143a4e"
+  },
+  "order_sha256": "07d17739e883778da0c4be420af23ef4c952d1cb1f2e0d78b312919a141644b1"
+}

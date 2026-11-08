@@ -1,0 +1,76 @@
+Shared search run 2
+
+Scope: One fresh model-search context using the shared 16 training goal
+structures, 4 fixed training worlds, baseline controls, and the supplied old
+mixed-delivery diagnostic. No validation/test goal specifications or feedback,
+other searches, or extra trajectories were consumed. Parent owns selection.
+
+Baselines read before first evaluated candidate: incumbent 58/64 training
+successes. Reference direct first descent lost many reach episodes relative to
+the incumbent and base policy; this motivates retaining initial preparation.
+
+Candidate 1 hypothesis: preserve tier-3 pick/sword preparation and initial base
+routing without reserves; actively recover wood/stone/coal/iron spending surplus
+above positive reserves; explicitly traverse clear floors for resource-bound or
+previously visited routes. Travel failures use frontier walking and floor-2
+lighting. Acquisition search receives a productive frontier fallback.
+
+Training results and subsequent adaptations pending.
+
+Candidate 1 training: 38/64, failure-penalized steps 25821.046875,
+actual actions 868432, 0 violations. Coal-2 reserve task improved from 1/4 to
+4/4. However explicit navigation interfered with the frozen policy's supply
+trips: repeated floor transitions and deaths also occurred on reach-only tasks.
+The first-entry check based on whether the next floor had been seen was too
+weak, because supply returns make that condition true before preparation ends.
+The acquire frontier fallback also coincided with long failed searches/deaths
+on iron tasks; this evaluation does not isolate causality among those changes.
+
+Candidate 2 hypothesis: isolate replenishment. Start from incumbent again,
+retain all its preparation, acquire gate, and navigation; locally gather up to
+3 wood, 1 stone, 3 coal, 3 iron above positive reserves. No surplus-triggered
+cross-floor travel and no custom route/exploration. Tasks with no active reserve
+should retain the incumbent decisions until an acquire stage is completed.
+
+Candidate 2 training: 60/64, failure-penalized steps 12416.09375,
+actual actions 682649, 0 violations. All reach-only goals matched incumbent
+scores and costs. Coal-reserve tasks improved overall, but one coal-2 world
+ended in death after completing only acquisition. The coal/iron task still had
+a timeout ending with wood 1, and a death ending with wood 0. Mixed wood/iron
+retained the incumbent early death with coal 0, iron 8. These stock endpoints
+motivate protecting unreserved production inputs; they do not establish a
+causal death diagnosis without additional trajectories, which were not run.
+
+Candidate 3 hypothesis: retain candidate 2's routes and gate, add Overworld
+wood stock of reserve + cfg.wood_stock and coal stock of reserve + 3 whenever
+any reserve is active. These account for table/torch/armour input costs even
+when wood or coal themselves are unreserved. Below the Overworld, with tier-3
+pick and sword, low usable wood triggers the existing cross-floor gather
+helper; the Overworld stocking rule then supplies a full load before base
+routing resumes. No custom descent, frontier, or lighting controller remains.
+
+Candidate 3 training: 60/64, failure-penalized steps 12642.90625,
+actual actions 674778, 0 violations. Mixed wood/iron improved to 4/4 from
+candidate 2's 3/4, while wood-6 maintain lost one world (3/4). Coal/iron
+remained 2/4. Extra production stock therefore trades early timing/survival
+between resource goals; it does not uniformly improve the local-surplus policy.
+
+Closure: Exactly three approved search.py evaluations completed, each 16
+training goals x 4 fixed worlds x 50000-action horizon. All source and archived
+source hashes were checked against round results and closed.json; all three
+result hashes were checked against closure. search_closed=true and
+validation_feedback_used=false. No selected.py was written and no candidate is
+selected by this search context. No evaluated candidate was edited afterward.
+
+Summary (candidate, successes/64, failure-penalized steps, actual actions):
+1, 38/64, 25821.046875, 868432
+  source_sha256=30ca74964e05ae0e92ad572d58e6d14027505e07a427ae172b74a1f09ac9aded
+2, 60/64, 12416.09375, 682649
+  source_sha256=298e5ead35ac282c4a8f2819a27b675b63247cbd0954e87c8f8cfeaa6ec1195d
+3, 60/64, 12642.90625, 674778
+  source_sha256=638984083bce501a00aa36c388b833f65c6ca7510010f984b8c898c67c136318
+Total evaluated episodes: 192
+Total actual environment actions: 2225859
+Token usage unavailable; no token count claimed. Parent records elapsed time.
+Limitations: four shared training worlds, no held-out feedback, no new traces;
+stock endpoints and altered trajectories do not alone establish causal death mechanisms.

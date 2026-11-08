@@ -1,0 +1,1841 @@
+// floor8.tr: the floor-8 strategy of the Craftax Full policy, as a TR program.
+// Decompiled by tools/decompile.py from the C++ policy in benchmarks/futamura/target
+// (benchmarks/policy_speed/cpp/work/combo, snapshot 05); run by the interpreter I.
+// Rules run in order every decision; the first to emit wins.
+
+// Feature bits of the target's TV word (TB(n) in the C source).
+const TB0 = 1; const TB1 = 0; const TB2 = 1; const TB4 = 1; const TB5 = 1; const TB6 = 1; const TB7 = 0; const TB8 = 0; const TB10 = 0; const TB11 = 1; const TB12 = 1; const TB13 = 0; const TB14 = 1; const TB15 = 0; const TB16 = 0; const TB18 = 0; const TB19 = 0; const TB20 = 0; const TB21 = 1; const TB23 = 0; const TB24 = 1;
+
+// Strategy constants.
+const DG_FROM = 7;
+const DG_MARGIN = 2.5f;
+const FIRE_ICEPREP = 0;
+const GRAVEYARD_RECOVER_HEALTH = 10;
+const GRAVEYARD_TORCH_GAIN = 25;
+const ICETRIP_DIA = 1;
+const ICETRIP_DIA_GAIN = 16;
+const ICETRIP_DIA_PATH = 400;
+const ICETRIP_DIA_SEEK = 50;
+const ICETRIP_DIA_STEPS = 250;
+const ICETRIP_GEMS = 1;
+const ICETRIP_HOME = 6;
+const ICETRIP_L5SAFE = 1;
+const ICETRIP_LOCK = 0;
+const ICETRIP_MINES = 5;
+const ICETRIP_MINESTAY = 0;
+const ICETRIP_OUT = 0;
+const ICETRIP_WOOD = 1;
+const ICE_TORCH_GAIN = 25;
+const LGI_DEX = 0;
+const MID_DEX6 = 0;
+const MID_PEN = 0;
+const RESPONSE_MODE = 2;
+const SP_BETA = 25;
+const SP_CRIT = 1;
+const SP_CRIT_DRINK = 2;
+const SP_CRIT_FILL = 6;
+const SP_CRIT_MELEE = 4;
+const SP_CRIT_RANGE = 12;
+const SP_CRIT_STEPS = 60;
+const SP_DRINK = 1;
+const SP_FOOD = 1;
+const SP_FOOD_ALPHA_X10 = 10;
+const SP_FOOD_AT = 5;
+const SP_FROM = 5;
+const VAULT_UNUSABLE = 1000000;
+
+// Per-decision variables, zeroed at the start of every decision.
+ctx { int fire, prep, troll_low, hold, routed, unseen_level, vault_calm, needs_healing, prepare, ready; }
+
+// Strategy helpers.
+
+/* Troll-stream macro-state: from the first Troll Mines arrival until the
+ * first Fire arrival, including return trips from the mines. */
+def int troll_phase() { return a.floors[5].seen && !a.floors[6].seen;
+}
+
+/* The first Fire expedition: from the first Fire arrival, including climbs
+ * back to the mines for water, until the first Ice arrival. */
+def int fire_phase() { return a.floors[6].seen && !a.floors[7].seen;
+}
+
+/* Icetrip stream: every excursion off Ice after the first Ice arrival (Fire
+ * food visits and crossings, Troll Mines stays, Sewers enchant trips). */
+def int icetrip() { return a.floors[7].seen && a.level<7;
+}
+
+def int mines_guard() { return troll_phase() || (ICETRIP_L5SAFE && icetrip());
+}
+
+/* Early stream (floors 0-4 before the first Troll Mines arrival). */
+def int early() { return !a.floors[5].seen;
+}
+
+/* Shallow stream (round 15): Overworld, Dungeon and Gnomish Mines until the
+ * first Sewers arrival, including their return trips. */
+def int shallow() { return !a.floors[3].seen;
+}
+
+def int lg_ice_region() { return a.floors[7].seen;
+}
+
+def int sp_region() { return a.floors[SP_FROM].seen;
+}
+
+def int lg_mid_region() { return a.floors[5].seen && !a.floors[7].seen;
+}
+
+/* Health at which a Fire visit ends: room for the next blow and a margin.
+ * (Leaving at max(8, hit+4.5) instead did not help: +0.6pp, noise.) */
+def float fire_retreat() {
+ return fmaxf(6,fire_hit()+2.5f);
+}
+
+/* The Sewers ice-armour trip is pending: sapphires in hand, armour not yet
+ * fully ice-enchanted. Every Ice step before it is taken with fire armour
+ * (frost troll hits 5.8-7.4), so nothing on Ice may delay it, and nothing
+ * on its outbound route may turn it back. */
+def int enchant_trip() {
+ int ice=0;for(int i=0;i<4;i++)ice+=o.armour_enchant[i]==2;
+ return a.floors[7].seen && wm_armour() && o.inv[I_SAPPHIRE] && ice<4;
+}
+
+/* Every Vault has exactly one fire table. Searches that gave up at 600
+ * steps sent 199 of 5,725 Fire entrants down with unspent rubies. */
+def int vault_limit() {
+ return (troll_phase() || fire_phase()) && o.inv[I_RUBY]>=2?1800:600;
+}
+
+/* A Vault trip is worth starting while the table is known or the search
+ * budget lasts. In the troll phase a known but unreachable table (seen
+ * across unexplored darkness) also spends the budget, or the trip
+ * climbs, fails to reach it, descends and climbs again (ep 541, 186). */
+def int vault_trip_ok() {
+ if(troll_phase())return a.vault_search<vault_limit();
+ /* Fire phase: a table found unusable (VAULT_UNUSABLE) ends the trips. */
+ return (fire_table_known() && a.vault_search<VAULT_UNUSABLE) || a.vault_search<vault_limit();
+}
+
+/* Vault enchant trips from the mines took 263 steps (2% deaths each), much of
+ * it in a Vault shelter waiting for the nine mana an enchant costs. Mana
+ * regenerates while we work here (1 per ~6 steps at int 3): leave with it. */
+def int troll_mana_ok() {
+ return !TB23 || !troll_phase() || a.level!=5 || o.mana>=9;
+}
+
+def int nav_descent_blocked() {
+ if(!a.floors[DG_FROM].seen)return 0;
+ if(a.nav_ent_t<=0 || a.nav_ent_from!=a.level+1)return 0;
+ float safe=fminf(nav_floor_hit(a.level+1)+DG_MARGIN,8+o.str-0.01f);
+ return a.nav_ent_hp10<safe*10 && o.health<safe;
+}
+
+/* The pen owns the troll-phase food decision while active or not yet failed
+ * this visit: the incumbent's food climb (TB(2), food <= 3) is bypassed. */
+def int lg_mid_owns_food() {
+ return MID_PEN && a.mid_pen==1;
+}
+
+/* Fire phase (the XP of the Fire arrival): dexterity up to MID_DEX6 before the
+ * incumbent's Fire rule spends it on intelligence. */
+def int lg_mid_xp6() {
+ return MID_DEX6 && lg_mid_region() && fire_phase() && o.xp>0 && o.dex<MID_DEX6;
+}
+
+/* Attribute spending at Ice arrival (one XP point: floor 7's first arrival).
+ * The incumbent spends it on intelligence (4 -> 5). Dexterity instead raises
+ * the food, drink and energy maxima by 2 and slows their decay by 1/8: a full
+ * food stock lasts 11 x 29.7 = 327 steps instead of 9 x 26 = 234, and each Ice
+ * stint (food max -> 3) grows from 156 to 238 steps, i.e. a third fewer supply
+ * trips through Fire for the same Ice time. */
+def int lg_ice_xp() {
+ if(!LGI_DEX || !lg_ice_region() || !o.xp)return -1;
+ /* Every XP point gained in the region (floor 7's) goes to dexterity. */
+ if(o.dex<5)return LEVEL_DEX;
+ return -1;
+}
+
+def int sp_food_leave() {
+ if(!SP_FOOD || !sp_region() || o.food>SP_FOOD_AT)return 0;
+ int dir=-1,cost=rm_plan_food(&dir);
+ if(cost<0 || dir!=-1)return 0;
+ int tte=rm_time_to_empty(0 /* RM_FOOD */);
+ if(SP_FOOD_ALPHA_X10*cost/10+SP_BETA<tte)return 0;
+ a.sp_log[3][0]++;
+ return 1;
+}
+
+// The rules, in priority order.
+
+/* [0] p_init (CORE): Clear the goal marker; compute the Fire-phase flag (ctx->fire). */
+rule p_init [core] {
+ a.goal=-1;
+ ctx.fire=fire_phase();
+}
+
+/* p_nav_entry (NAV prelude, second in the table): record how the current floor
+ * visit began. On the first step after a floor change the previous observation
+ * is still the old floor's (no rule can run between the change and this step). */
+rule p_nav_entry [nav] {
+ 
+ if(a.t && a.previous.level!=a.level){a.nav_ent_t=a.t+1;a.nav_ent_from=a.previous.level;a.nav_ent_hp10=(int)(o.health*10+0.5f);}
+}
+
+/* [1] r_asleep (SUPPLY): Asleep or resting: keep still. */
+rule r_asleep [supply] {
+ if(o.sleeping||o.resting)emit NOOP as RECOVER;
+}
+
+/* [2] r_lgi_xp_early (BUILD): Ice stream (lg_ice.inc): the Ice arrival XP point, often carried up to Fire by the ice-enchant trip before it is spent. */
+rule r_lgi_xp_early [build] {
+ int act=-1;
+ /* Ice stream (lg_ice.inc): the Ice arrival XP point, often carried up to
+  * Fire by the ice-enchant trip before it is spent. */
+ if(LGI_DEX && lg_ice_region() && o.xp && wm_incoming_damage(NOOP)==0){act=lg_ice_xp();if(act>=0)emit act as UPGRADE;}
+}
+
+/* [3] r_lgm_xp6 (BUILD): mid stream (lg_mid.inc): fire-phase attribute spending (off by default). */
+rule r_lgm_xp6 [build] {
+ /* Spend the Fire floor's XP before travel or enchantment preparation
+  * takes priority. Stronger spells shorten elemental fights, and improve
+  * mana recovery. A ready attack or incoming projectile still interrupts. */
+/* mid stream (lg_mid.inc): fire-phase attribute spending (off by default). */
+ if(lg_mid_xp6() && wm_incoming_damage(NOOP)==0)emit LEVEL_DEX as UPGRADE;
+}
+
+/* [4] r_fire_xp_int (BUILD): Spend the Fire floor's XP on intelligence before travel or enchant preparation. */
+rule r_fire_xp_int [build] {
+ if(a.level==6 && o.xp && o.intelligence<5 && wm_incoming_damage(NOOP)==0)
+  emit LEVEL_INT as UPGRADE;
+}
+
+/* [5] p_gem_trip_state (BUILD): Gem-trip state machine (ctx->prep, a->fire_prep): start, budget and end of the Fire-phase prospecting climb. */
+rule p_gem_trip_state [build] {
+ /* Gem trip. Once Fire is clear and its exit known this is the last chance
+  * before Ice: one more plate (1-2 diamonds short) or the sapphires for four
+  * ice pieces are worth a climb to prospect the cleared Troll Mines in fire
+  * armour (oracles from Fire arrival: +3 diamonds +7.5pp, +3 sapphires
+  * +6.1pp). It ends on target, when the prospecting budget is spent, when the
+  * mines offer nothing more to light or mine (below), or after 1,500 steps;
+  * the mines stop then provisions the descent as usual. */
+ ctx.prep=ctx.fire?a.fire_prep:0;
+ if(ctx.fire && !ctx.prep && a.level==6 && o.clear && a.floors[6].down>=0)
+  ctx.prep=a.fire_prep=a.fire_dia<3500 && o.inv[I_PICK]>=3 && o.inv[I_TORCH]>8 &&
+   ((o.inv[I_DIAMOND]>=1 && wm_armour()<8) || o.inv[I_SAPPHIRE]<4)?1:2;
+ if(ctx.prep==1 && (++a.fire_prep_steps>1500 || a.fire_dia>=3500 ||
+    !((o.inv[I_DIAMOND]>=1 && wm_armour()<8) || o.inv[I_SAPPHIRE]<4)))ctx.prep=a.fire_prep=2;
+}
+
+/* [6] p_fire_wait_reset (NAV): Reset the Fire ladder wait counter off the Fire ladders. */
+rule p_fire_wait_reset [nav] {
+ if(ctx.fire && (a.level!=6 || (a.floors[6].up!=cell(a.r,a.c) && a.floors[6].down!=cell(a.r,a.c))))a.fire_wait=0;
+}
+
+/* [7] r_realm_descend_now (NAV): On an unlocked exit to the next unexplored realm (Fire/Ice), descend at once. */
+rule r_realm_descend_now [nav] {
+ /* Floor travel happens before enemy attacks. Take an unlocked exit
+  * immediately when it leads to the next unexplored realm. */
+ if((a.level==6 || a.level==7) && !a.floors[a.level+1].seen && o.clear && a.floors[a.level].down==cell(a.r,a.c) && ctx.prep!=1)
+  emit DESCEND as TRAVEL;
+}
+
+/* [8] r_potion_known_heal (COMBAT): Known healing can interrupt a fight even when every retreat is blocked. */
+rule r_potion_known_heal [combat] {
+ /* Known healing can interrupt a fight even when every retreat is blocked. */
+ for(int i=0;i<6;i++)if(o.potions[i] && a.potion_effect[i]==0 && bm_healing_needed())
+  emit POTION_RED+i as RECOVER;
+}
+
+/* [9] p_troll_low (COMBAT): A troll costs one unanswered hit even when we strike first: 20 HP needs two diamond-sword blows. */
+rule p_troll_low [combat] {
+ /* A troll costs one unanswered hit even when we strike first: 20 HP needs
+  * two diamond-sword blows. After that hit, the next troll would leave us
+  * near death, so heal while another hit would leave less than 3 health. */
+ ctx.troll_low=a.level==5 && o.health<8+o.str-0.01f && o.health-wm_attack_damage(6)<3;
+}
+
+/* [10] r_mines_potions (COMBAT): One potion colour restores 8 health, and most agents reach the mines carrying it unidentified. */
+rule r_mines_potions [combat] {
+ /* One potion colour restores 8 health, and most agents reach the mines
+  * carrying it unidentified. Test unknown colours while a harmful one
+  * (-3 health) is survivable and no troll is close; then spend healing
+  * potions when a troll would otherwise land the hit that kills. */
+ if(a.level==5) {
+  int near=0,heal=-1;
+  for(int i=0;i<a.enemy_count;i++)if(!a.enemies[i].kind && abs(a.enemies[i].p/SIDE-a.r)+abs(a.enemies[i].p%SIDE-a.c)<=4)near=1;
+  for(int i=0;i<6;i++)if(o.potions[i] && a.potion_effect[i]==0)heal=i;
+  if(heal>=0 && o.health-wm_attack_damage(6)<3 && (near || o.health<=4))emit POTION_RED+heal as RECOVER;
+  int quiet=!TB0 || !troll_phase() || (!wm_melee_within(10) && o.health>=6.5f);
+  if(TB0 && troll_phase())for(int i=0;i<a.enemy_count;i++)if(a.enemies[i].kind)quiet=0;
+  /* Unknown-colour tests can lose 3 HP. A visible incoming projectile
+   * must first reach the ordinary tactical dodge decision. Known healing
+   * retains its emergency priority above this optional test. */
+  if(heal<0 && !near && quiet && o.health>=5 && o.health<=8+o.str-3 &&
+     (!troll_phase() || wm_incoming_damage(NOOP)==0))
+   for(int i=0;i<6;i++)if(o.potions[i] && a.potion_effect[i]<0)emit POTION_RED+i as RECOVER;
+ }
+}
+
+/* [11] p_hold (SUPPLY): Supply trips at that health meet the next troll. */
+rule p_hold [supply] {
+ /* Supply trips at that health meet the next troll. Recovery holds us in
+  * shelter until drink or food is critical, as it does once started. */
+ ctx.hold=ctx.troll_low && o.drink>2 && o.food>2;
+}
+
+/* [12] p_routed_paths (CORE): Realm floors: compute distance maps (paths) before retreat rules (ctx->routed). */
+rule p_routed_paths [core] {
+ /* Realm retreats follow the route to the up ladder (tactical). */
+ ctx.routed=a.level==4 || a.level==5 || a.level==6 || a.level==7 || (a.level==1 && !a.floors[5].seen);
+ if(ctx.routed)paths_begin();
+}
+
+/* [13] r_fire_low_retreat (COMBAT): Pigmen keep pace and elementals fire point-blank once cornered, so a low fight on Fire ends in death (pre-clear deaths sat a median ~8 cells from the up ladder). */
+rule r_fire_low_retreat [combat] {
+ int act=-1;
+ /* Pigmen keep pace and elementals fire point-blank once cornered, so a
+  * low fight on Fire ends in death (pre-clear deaths sat a median ~8
+  * cells from the up ladder). Mobs never follow a ladder: take it while
+  * it is near, before another exchange. */
+ if(ctx.fire && a.level==6 && o.health<=fire_retreat()) {
+  int up=a.floors[6].up;
+  if(up==cell(a.r,a.c))emit ASCEND as TRAVEL;
+  if(up>=0 && path_near(up,250)){act=travel(0);if(act>=0)emit act as TRAVEL;}
+ }
+}
+
+/* [14] p_icetrip_legs (SUPPLY): A new excursion starts on the first Fire step after a climb from Ice. */
+rule p_icetrip_legs [supply] {
+ /* A new excursion starts on the first Fire step after a climb from Ice. */
+ if(icetrip() && a.level==6 && a.t && a.previous.level==7){a.icetrip_wait=0;a.icetrip_guard=0;a.icetrip_dest=ICETRIP_OUT;a.icetrip_start=a.t;}
+ /* A food (or rest) stop in the mines: stay until fed (below). */
+ if(icetrip() && a.level==5 && a.t && a.previous.level==6 && !enchant_trip() && a.icetrip_dest==ICETRIP_OUT)a.icetrip_dest=ICETRIP_MINES;
+}
+
+rule r_r3_response [combat] {
+ 
+ if(a.level!=5 || o.sleeping || o.resting || wm_melee_within(2))pass;
+ int event=a.unseen_hit>a.troll_slime_t?a.unseen_hit:a.troll_slime_t,act=-1;
+ if(RESPONSE_MODE&2) {
+  act=rs_cover();if(act>=0)emit act as FIGHT;
+ }
+ if(event<=0 || a.t-event>8)pass;
+ if(RESPONSE_MODE&4) {
+  act=rs_escape(event);if(act>=0)emit act as TRAVEL;
+ }
+ if(RESPONSE_MODE&1) {
+  act=rs_light();if(act>=0)emit act as LIGHT;
+ }
+}
+
+/* [combat] r_cb_lowflee (COMBAT): Troll Mines at troll_low health, troll within 6, none adjacent: route to the up ladder. */
+rule r_cb_lowflee [combat] {
+ int act=-1;
+ act=cb_lowflee();if(act>=0)emit act as TRAVEL;
+}
+
+/* [15] r_tactical (COMBAT): Adjacent fights, dodges and spells (tactical() + full_tactics.inc). */
+rule r_tactical [combat] {
+ int act=-1;
+ try bm_snipe(1) as FIGHT;
+ act=tactical();
+ if(act>=0)emit act as FIGHT;
+}
+
+/* [16] r_troll_dark_entry (NAV): Troll Mines dark-entry repair (troll_dark_entry). */
+rule r_troll_dark_entry [nav] {
+ int act=-1;
+ act=troll_dark_entry();
+ if(act>=0)emit act as act==PLACE_TORCH?LIGHT:TRAVEL;
+}
+
+/* [17] r_ice_dark_entry (NAV): Ice dark-entry repair (ice_dark_entry). */
+rule r_ice_dark_entry [nav] {
+ int act=-1;
+ act=ice_dark_entry();
+ if(act>=0)emit act as act==PLACE_TORCH?LIGHT:TRAVEL;
+}
+
+/* [18] r_troll_doorway (COMBAT): Troll Mines doorway fights. */
+rule r_troll_doorway [combat] {
+ /* Troll Mines doorway fights. After a heal the pack waits outside the room
+  * (melee damage per step doubles in the 30 steps after recovery ends) and
+  * a walk out meets it unfaced. From inside, open the wall a troll can reach
+  * and hold: every troll must then enter that one cell, in front of us, so
+  * it is struck first and pre-cast spells meet it there. Reseal when another
+  * hit would leave little health. Inside with partial health, keep healing. */
+ if(TB8 && a.level==5 && troll_phase()) {
+  int here=cell(a.r,a.c),fr=a.r+dr[o.dir],fc=a.c+dc[o.dir],faced=inside(fr,fc)?cell(fr,fc):-1;
+  int near=wm_melee_within(6);
+  if(a.troll_door) {
+   int dcell=a.troll_door-1,close=0;
+   /* Hold while a troll can still come (within five of the doorway): a hold
+    * released for a drink walked out into the troll it was waiting for. */
+   for(int i=0;i<a.enemy_count;i++){if(!(a.enemies[i]).kind && abs((a.enemies[i]).p/SIDE-dcell/SIDE)+abs((a.enemies[i]).p%SIDE-dcell%SIDE)<=5)close=1;}
+   /* Releasing must not hand the open room back to recovery, which reseals it. */
+   if(a.troll_door_stand!=here+1 || a.troll_door!=faced+1 || !close || a.t-a.troll_door_t>40 || o.drink<=1 || o.food<=1){a.troll_door=0;if(o.health>=8+o.str-0.01f)a.recovering=0;}
+   else {
+    if(o.health<=wm_attack_damage(6)+1 && !mob_at(faced) && o.inv[1]>0 && walkable(block(fr,fc))){a.troll_door=0;emit PLACE_STONE as RECOVER;}
+    emit NOOP as FIGHT;
+   }
+  }
+  if(sealed_in() && near) {
+   int full=o.health>=8+o.str-0.01f,critical=o.drink<=1 || o.food<=1;
+   if(!full && !critical)a.recovering=1;
+   else {
+    /* Open the wall that a nearby troll can reach, away from pools. */
+    int bestd=0,bestscore=0;
+    for(int d=1;d<=4;d++) {
+     int r=a.r+dr[d],c=a.c+dc[d];if(!inside(r,c))continue;int b=block(r,c);
+     if(!solid(b) || !mineable(b) || b==TABLE || b==FURNACE)continue;
+     int open=0;for(int k=1;k<=4;k++){int r2=r+dr[k],c2=c+dc[k];if((r2!=a.r || c2!=a.c) && walkable(block(r2,c2)))open=1;}
+     if(!open)continue;
+     int score=d==o.dir?2:0;
+     for(int i=0;i<a.enemy_count;i++){if(!(a.enemies[i]).kind && abs((a.enemies[i]).p/SIDE-r)+abs((a.enemies[i]).p%SIDE-c)<=3)score+=10;}
+     for(int k=2;k<=6;k++){int r2=a.r+k*dr[d],c2=a.c+k*dc[d];if(inside(r2,c2) && block(r2,c2)==WATER)score-=8;}
+     if(score>bestscore){bestscore=score;bestd=d;}
+    }
+    if(bestscore<10)bestd=0;
+    if(bestd && bestd!=o.dir)emit bestd as FIGHT;
+    if(bestd){a.recovering=0;a.troll_door=faced+1;a.troll_door_stand=here+1;a.troll_door_t=a.t;emit DO as FIGHT;}
+   }
+  }
+ }
+}
+
+/* [19] r_fire_refit (BUILD): Refit first. */
+rule r_fire_refit [build] {
+ int act=-1;
+ /* Refit first. 16% of Fire entrants lack fire enchants (P(7) .49 with none,
+  * .91 with four): pigman blows cost 6.8 instead of 2.8. 60% of them carry an
+  * iron pickaxe (no ruby mining), half of those three diamonds but no wood,
+  * and the generic rules crafted only after clearance or went to the
+  * Overworld for wood. Fire trees give wood and Fire rock is 2.5% ruby: fix
+  * the pickaxe, make plates and mine rubies beside the ladder first; the mines
+  * stop then takes rubies to the Vault table (partial-stock rule). Ice is pitch
+  * dark and coal-free, and the Ice phase mined coal and fire-tree wood on its
+  * Fire food trips in ice armour: stock both here, in fire armour, once Fire
+  * is clear, early in a visit (drink >= 7). */
+ if(ctx.fire && a.level==6 && !wm_hostile_within(5) && o.health>fire_retreat()+1 &&
+    o.drink>=5 && o.food>=3 && o.energy>cfg.sleep_at+1) {
+  int fp=0;for(int i=0;i<4;i++)fp+=o.armour_enchant[i]==1;
+  int table=0;
+  for(int p=(a.floors[6]).known_lo;p<=(a.floors[6]).known_hi;p++)if(near(p,0) && path_near(p,250)){table=1;break;}
+  int sk=GATHER;act=-1;
+  if(o.inv[I_PICK]==3 && o.inv[I_DIAMOND]>=3) {
+   if(o.inv[I_WOOD]<(table?1:3))act=seek_block(TREE,25);
+   else {act=craft_radius(DIAMOND_PICK,250);sk=CRAFT;}
+  }
+  if(act<0 && wm_armour()<8 && o.inv[I_DIAMOND]>=3) {
+   if(o.inv[I_WOOD]<(table?0:2)){act=seek_block(TREE,25);sk=GATHER;}
+   else {act=craft_radius(DIAMOND_ARMOUR,250);sk=CRAFT;}
+  }
+  if(act<0){sk=GATHER;if(o.inv[I_PICK]>=4 && wm_armour() && fp<4 && o.inv[I_RUBY]<4-fp && vault_trip_ok())act=seek_block(RUBY,20);}
+  if(act<0 && o.clear && a.floors[6].down>=0 && o.inv[I_PICK]>=1 && o.drink>=7) {
+   if(o.inv[I_COAL]<14)act=seek_block(COAL,15);
+   if(act<0 && o.inv[I_WOOD]<12)act=seek_block(TREE,15);
+  }
+  if(act>=0)emit act as sk;
+ }
+}
+
+/* [20] r_icetrip_lock (SUPPLY): Heal and sleep in the ladder airlock rather than crossing Fire low or sheltering in the open (see icetrip_lock). */
+rule r_icetrip_lock [supply] {
+ int act=-1;
+ /* Heal and sleep in the ladder airlock rather than crossing Fire low or
+  * sheltering in the open (see icetrip_lock). */
+ if(ICETRIP_LOCK && icetrip() && a.level==6 && !enchant_trip()) {
+  int lock=icetrip_lock(),mh=8+o.str;
+  /* Healing turns food into health about one for one: start only with food
+   * for it (the base shelter rule wants food > 2 too), or the room becomes a
+   * starvation trap. */
+  int want=(o.health<=6.5f && o.health<mh-0.01f && o.food>=3 && o.drink>=3) ||
+           (o.energy<=cfg.sleep_at && o.food>=2 && o.drink>=2) ||
+           (a.recovering && a.recovery_goal==lock && lock>=0 && o.food>=1 && o.drink>=1);
+  /* Out of food or drink inside: stop. The room cannot feed us, and the
+   * base exit (mine out, travel or forage) must not fight a re-seal. */
+  if(a.recovering && a.recovery_goal==lock && lock>=0 && (o.food<1 || o.drink<1)){a.recovering=0;a.recovery_goal=-1;}
+  if(want && lock>=0 && path_near(lock,150)) {
+   a.recovering=1;a.recovery_goal=lock;a.recovery_width=a.recovery_height=2;
+   act=recover();if(act>=0)emit act as RECOVER;
+  }
+ }
+}
+
+/* [21] r_icetrip_home_forage (SUPPLY): Ice-phase excursion on Fire: return home / forage (icetrip_home, icetrip_forage). */
+rule r_icetrip_home_forage [supply] {
+ int act=-1;
+ if(icetrip() && a.level==6) {
+  int sk_ice=TRAVEL;act=icetrip_home(&sk_ice);if(act>=0)emit act as sk_ice;
+  act=icetrip_forage(&sk_ice);if(act>=0)emit act as sk_ice;
+ }
+}
+
+/* [22] p_unseen_attrib (COMBAT): Floors 2 and guarded 5 (ctx->unseen_level): attribute unexplained damage to unseen attackers (wm_attribute_damage). */
+rule p_unseen_attrib [combat] {
+ /* Mobs on unlit mine cells are not observed. A gnome beside us in the dark
+  * struck every six steps while exploration waited for a frontier (ep 27:
+  * four hits from full health, no reply); unseen attackers dealt 29 of the 79 blows in
+  * sampled floor-2 deaths. After a loss no visible enemy explains, light the
+  * facing cell, whose torch also lights every neighbour, or strike an unlit
+  * facing cell when no torch is left. Never step into an unlit cell: moves
+  * are tracked only onto known ground, so the map frame would drift. */
+/* Troll Mines too: an invisible troll beside us in the dark struck from
+  * full health to death while the agent waited for a frontier (ep 22: 27
+  * torches unused, five hits, no reply). */
+ ctx.unseen_level=a.level==2 || (a.level==5 && mines_guard());
+ if(ctx.unseen_level)wm_attribute_damage();
+}
+
+/* [23] r_slimeball_dodge (COMBAT): Leave the line it fired along: move to the neighbour with the fewest water or unseen cells in clear view along its row and column at range 2-5. */
+rule r_slimeball_dodge [combat] {
+ /* Leave the line it fired along: move to the neighbour with the fewest water
+  * or unseen cells in clear view along its row and column at range 2-5. */
+ if(TB12 && a.level==5 && troll_phase() && a.troll_slime_t && a.t-a.troll_slime_t<=1 && !wm_melee_within(2)) {
+  int best=0,bestn=INF;
+  for(int d=0;d<=4;d++) {
+   int r=a.r+dr[d],c=a.c+dc[d];
+   if(d && (!inside(r,c) || !walkable(block(r,c)) || mob_at(cell(r,c)) || arrow_at(cell(r,c))))continue;
+   int n=d?0:1;
+   for(int k=1;k<=4;k++)for(int j=1;j<=5;j++) {
+    int b=block(r+j*dr[k],c+j*dc[k]);if(solid(b))break;
+    if(j>=2 && (b==WATER || b==UNKNOWN))n++;
+   }
+   if(n<bestn){bestn=n;best=d;}
+  }
+  if(best)emit best as FIGHT;
+ }
+}
+
+/* [24] r_unseen_attacker (COMBAT): After a hit no visible enemy explains: light or strike the facing cell. */
+rule r_unseen_attacker [combat] {
+ int act=-1;
+ if(ctx.unseen_level && a.t-a.unseen_hit<=4) {
+  int r=a.r+dr[o.dir],c=a.c+dc[o.dir];
+  int place_failed=a.previous_action==PLACE_TORCH && a.previous_target==cell(r,c) && o.inv[I_TORCH]>=a.previous.inv[I_TORCH];
+  /* A torch aimed off the map (unlit off-map cells stay unknown on this
+   * floor) fails silently; ep 214 repeated it four times under gnome blows.
+   * After a failed placement, light a valid neighbour instead. */
+  if(shallow() && a.level==2 && place_failed && o.inv[I_TORCH] && (act=place(PLACE_TORCH))>=0 && act!=PLACE_TORCH)emit act as LIGHT;
+  if(inside(r,c)) {
+   int q=cell(r,c),b=block(r,c);
+   /* Placement fails on a cell holding a mob: strike it instead. */
+   int failed=a.level==5 && a.previous_action==PLACE_TORCH && a.previous_target==q && o.inv[I_TORCH]>=a.previous.inv[I_TORCH];
+   if(failed && (b==UNKNOWN || walkable(b)))emit DO as FIGHT;
+   if(o.inv[I_TORCH] && !a.floors[a.level].marks[q].item && !mob_at(q) && (b==UNKNOWN||b==GRASS||b==PATH||b==SAND))
+    emit PLACE_TORCH as LIGHT;
+   if(b==UNKNOWN)emit DO as FIGHT;
+  }
+  if(o.inv[I_TORCH] && (act=place(PLACE_TORCH))>=0)emit act as LIGHT;
+ }
+}
+
+/* [25] r_troll_face_hold (COMBAT): Low-health heals hold 70% of floor-5 deaths, a median 42 steps after the heal starts: walking to a shelter (up to 35 steps) or to water while a troll closes in, which then arrives beside or behind us (ep 233 r1 walked ni */
+rule r_troll_face_hold [combat] {
+ /* Low-health heals hold 70% of floor-5 deaths, a median 42 steps after the
+  * heal starts: walking to a shelter (up to 35 steps) or to water while a
+  * troll closes in, which then arrives beside or behind us (ep 233 r1 walked
+  * nine steps along a troll's line at 6 health and took the hit unfaced).
+  * With a troll in view and not yet adjacent, stop and face its approach:
+  * axis spells and the first blow then land before its own. Bounded. */
+ if(TB19 && a.level==5 && troll_phase() && (ctx.troll_low || o.health<=6) && !sealed_in()) {
+  int best=-1,bd=9;
+  for(int i=0;i<a.enemy_count;i++){int dd=abs((a.enemies[i]).p/SIDE-a.r)+abs((a.enemies[i]).p%SIDE-a.c);if(!(a.enemies[i]).kind && dd>=2 && dd<bd){best=i;bd=dd;}}
+  if(best<0)a.troll_hold=0;
+  else if(a.troll_hold<40) {
+   int er=(a.enemies[best]).p/SIDE-a.r,ec=(a.enemies[best]).p%SIDE-a.c;
+   int want=abs(er)>=abs(ec)?(er>0?DOWN:UP):(ec>0?RIGHT:LEFT);
+   a.troll_hold++;
+   if(o.dir==want)emit NOOP as FIGHT;
+   int nr=a.r+dr[want],nc=a.c+dc[want];
+   if(known_direction(want) && (!inside(nr,nc) || !walkable(block(nr,nc)) || mob_at(cell(nr,nc)) || bd>=4))emit want as FIGHT;
+   emit NOOP as FIGHT;
+  }
+ }
+}
+
+/* [26] r_boss_wait (COMBAT): Graveyard: wait while the boss is vulnerable after 8 hits. */
+rule r_boss_wait [combat] {
+ if(a.level==8 && a.boss_hits>=8 && o.boss_vulnerable)emit NOOP as RECOVER;
+}
+
+/* [27] p_paths (CORE): Non-realm floors: compute distance maps (paths). */
+rule p_paths [core] {
+ if(!ctx.routed)paths_begin();
+}
+
+/* [28] r_graveyard_wave (COMBAT): Each cleared Graveyard wave is a safe, unlimited recovery window: food, drink and energy stop decaying on this floor. */
+rule r_graveyard_wave [combat] {
+ /* Each cleared Graveyard wave is a safe, unlimited recovery window:
+  * food, drink and energy stop decaying on this floor. Restore health and
+  * mana before touching the Necromancer and starting the next wave. */
+ if(a.level==8 && o.boss_vulnerable) {
+  try bm_prepare() as RECOVER;
+  if(o.health<8+o.str-0.01f && o.food>0 && o.drink>0 && o.energy>0)
+   emit NOOP as RECOVER;
+  if(o.mana<6+3*o.intelligence)emit NOOP as RECOVER;
+  try seek_block(BOSS,100) as FIGHT;
+ }
+}
+
+/* [29] r_fire_iceprep (BUILD): Ice is pitch dark and has no coal: its exploration is torches, 1 coal + 1 wood per 4. */
+rule r_fire_iceprep [build] {
+ /* Ice is pitch dark and has no coal: its exploration is torches, 1 coal
+  * + 1 wood per 4. Fire stone is 5% coal and fire trees give wood. Stock
+  * up close to the route once Fire is clear, before the first descent. */
+ if(FIRE_ICEPREP && ctx.fire && a.level==6 && o.clear && o.health>=7 && o.inv[I_PICK]>=1 && wm_incoming_damage(NOOP)==0) {
+  if(o.inv[I_COAL]<10)try seek_block(COAL,10) as GATHER;
+  if(o.inv[0]<8)try seek_block(TREE,10) as GATHER;
+ }
+}
+
+/* [30] r_gem_trip_climb (BUILD): Gem trip active on Fire: climb to the Troll Mines. */
+rule r_gem_trip_climb [build] {
+ if(ctx.prep==1 && a.level==6)try travel(0) as TRAVEL;
+}
+
+/* [31] r_realm_descend (NAV): Cleared Fire/Ice with the next realm unseen: travel to the down ladder. */
+rule r_realm_descend [nav] {
+ if((a.level==6 || a.level==7) && !a.floors[a.level+1].seen && o.clear && ctx.prep!=1)try travel(1) as TRAVEL;
+}
+
+/* [32] r_dungeon_retreat (COMBAT): Dungeon (pre-Troll), up ladder within 200: climb with a mob near at health <= 5, or at health <= 3. */
+rule r_dungeon_retreat [combat] {
+ /* A shelter cannot be sealed beside realm melee, and walking off only
+  * leads the chase. When one more hit would leave little, leave the floor:
+  * mobs never follow a ladder, and the floor above is where we heal. */
+/* Dungeon retreat. Health returns one point per 25 steps, and a Dungeon
+  * shelter is built under fireballs: low-health fights there ended in kiting
+  * an orc beside a mage at 2-3 health (ep 173). Mobs never follow a ladder and
+  * the Overworld has water, cows and stone for a safe heal. Leave when one
+  * more orc blow or fireball pair would leave little. */
+ if(a.level==1 && !a.floors[5].seen && a.floors[1].up>=0 && path_near(a.floors[1].up,200)) {
+  int near=0;for(int i=0;i<a.enemy_count;i++){int d=abs((a.enemies[i]).p/SIDE-a.r)+abs((a.enemies[i]).p%SIDE-a.c);if(d<=((a.enemies[i]).kind?6:4))near=1;}
+  if((near && o.health<=5) || o.health<=3)try travel(0) as TRAVEL;
+ }
+}
+
+rule r_supply_critical [supply] {
+ int act=-1;
+ if(!SP_CRIT || !sp_region() || a.level==6 || a.level==8){a.sp_crit=0;pass;}
+ int fill=imin(SP_CRIT_FILL,7+2*o.dex);
+ if(a.sp_crit && (o.drink>=fill || a.t-a.sp_crit_t>SP_CRIT_STEPS || a.previous.level!=a.level))a.sp_crit=0;
+ if(!a.sp_crit && o.drink>SP_CRIT_DRINK)pass;
+ if(wm_melee_within(SP_CRIT_MELEE) || wm_incoming_damage(NOOP)>0){a.sp_crit=0;pass;}
+ act=seek_block(WATER,SP_CRIT_RANGE);
+ if(act<0){a.sp_crit=0;pass;}
+ if(!a.sp_crit){a.sp_crit=1;a.sp_crit_t=a.t;a.sp_log[1][0]++;}
+ a.drinking=1;
+ emit act as DRINK;
+}
+
+/* [33] r_dungeon_sleep_climb (SUPPLY): Dungeon (pre-Troll): climb to the Overworld to heal or sleep when health <= 6 or energy <= climb_energy (3-5 by ladder distance). */
+rule r_dungeon_sleep_climb [supply] {
+ /* Heal and sleep on the Overworld, not in a Dungeon shelter: 28 of 48
+  * sampled floor-1 deaths happened in recovery mode (14 asleep unsealed, 14
+  * under fire while building or holding a shelter for 10-350 steps). When
+  * the up ladder is close, a climb ends every pursuit and the Overworld has
+  * stone, water and cows. Leave for sleep with energy to spare: climbs that
+  * started at energy 3 crossed fights and reached the Overworld at energy 0
+  * with health already draining (ep 14 r1, 124 r1). */
+/* Shallow: the sleep climb waits for less energy when the ladder is close
+  * and no mob is near. At 5, Dungeon visits lasted 60-90 steps (energy 8 ->
+  * 5), never reached past 15 cells from the ladder, and the far exit stayed
+  * unknown (arrive1 ep 101, 54 round trips). Each energy point is 31 awake
+  * steps: 3 within 10 steps of the ladder, 4 within 20, else 5. At 3 from 27
+  * cells a fight on the way left 2 health and 0 energy (arrive1 ep 12). */
+ int climb_energy=5;
+ if(shallow() && a.level==1 && a.floors[1].up>=0) {
+  int d=path_dist(a.floors[1].up);climb_energy=d<=100?3:d<=200?4:5;
+  for(int i=0;i<a.enemy_count;i++){if(abs((a.enemies[i]).p/SIDE-a.r)+abs((a.enemies[i]).p%SIDE-a.c)<=((a.enemies[i]).kind?8:6))climb_energy=5;}
+ }
+ if(a.level==1 && !a.floors[5].seen && a.floors[1].up>=0 && path_dist(a.floors[1].up)<=300 &&
+    ((o.health<8+o.str-0.01f && o.health<=6) || o.energy<=climb_energy))try travel(0) as TRAVEL;
+}
+
+/* [34] r_realm_escape (COMBAT): Realm floors (routed, not the Dungeon): climb when one more hit (on Ice, every troll within 3 and an elemental in line) would leave little health. */
+rule r_realm_escape [combat] {
+ if(ctx.routed && a.level!=1) {
+  int near=0;for(int i=0;i<a.enemy_count;i++)if(!a.enemies[i].kind && abs(a.enemies[i].p/SIDE-a.r)+abs(a.enemies[i].p%SIDE-a.c)<=4)near=1;
+  /* Ice crowds: most Ice deaths (25 traced, a3) went from full health to zero
+   * within 30 steps with two or three frost trolls within four cells and an
+   * elemental within six. Each troll lands about one hit, so leave while the
+   * health covers the hits of every troll within three cells (and of an
+   * elemental with a clear line), not just one. Escapes are protective: with
+   * none at all, Ice melee deaths rose 390 -> 530 (ice_a4). */
+  float threat=wm_attack_damage(a.level+1);
+  if(a.level==7) {
+   int n=0;
+   for(int i=0;i<a.enemy_count;i++) {
+    int er=(a.enemies[i]).p/SIDE,ec=(a.enemies[i]).p%SIDE,d=abs(er-a.r)+abs(ec-a.c);
+    if(!(a.enemies[i]).kind && d<=3)n++;
+    if((a.enemies[i]).kind && wm_firing_line(a.r,a.c,er,ec))n++;
+   }
+   if(n>1)threat*=n;
+  }
+  if(near && (a.level!=5 || ((!o.clear || (TB16 && troll_phase())) && a.floors[5].up>=0 && path_near(a.floors[5].up,150))) && o.health<=threat+1)try travel(0) as TRAVEL;
+ }
+}
+
+/* [35] p_vault_calm (COMBAT): Troll-phase Vault with no mob near is calm (ctx->vault_calm): low-health Vault retreats then heal by the ladder. */
+rule p_vault_calm [combat] {
+ /* A low-health Vault retreat must precede food and fountain errands:
+  * ep 4 hunted at 2.2 HP, while ep 87 alternated water and recovery. */
+/* Troll Mines escapes land here at low health, and this rule carried them on
+  * to the Sewers: a 350-step trip with 5.3% deaths (starvation, lizards), then
+  * the walk back. With no Vault mob in sight, heal by the ladder instead. */
+ ctx.vault_calm=TB15 && troll_phase() && a.level==4 && !wm_melee_within(6);
+ if(TB15 && ctx.vault_calm)for(int i=0;i<a.enemy_count;i++)if(a.enemies[i].kind)ctx.vault_calm=0;
+}
+
+/* [36] r_vault_low_retreat (COMBAT): Vault, not recovering, health <= two knight hits: climb (unless the troll-phase Vault is calm). */
+rule r_vault_low_retreat [combat] {
+ if(a.level==4 && !a.recovering && o.health<8+o.str-0.01f && !ctx.vault_calm &&
+    o.health<=2*wm_attack_damage(5))try travel(0) as TRAVEL;
+}
+
+/* [37] r_troll_low_escape (COMBAT): troll_low with a troll near and no sealed shelter: escape by the up ladder (uncleared mines, or troll phase). */
+rule r_troll_low_escape [combat] {
+ /* Troll recovery chases end in corners. Leave before supply errands or
+  * shelter construction, unless the player already occupies a sealed room. */
+/* Cleared mines still send a troll every ~150 steps, and low heals there died
+  * 2.8% of the time (fights at 4-6 health). Escape by the ladder there too. */
+ if(ctx.troll_low && (!o.clear || (TB16 && a.level==5 && troll_phase()))) {
+  int near=0;for(int i=0;i<a.enemy_count;i++)if(!a.enemies[i].kind && abs(a.enemies[i].p/SIDE-a.r)+abs(a.enemies[i].p%SIDE-a.c)<=4)near=1;
+  int sheltered=0;
+  if(a.recovering && a.recovery_goal>=0) {
+   int rr=a.recovery_goal/SIDE,cc=a.recovery_goal%SIDE;
+   sheltered=a.r>=rr && a.r<rr+a.recovery_height && a.c>=cc && a.c<cc+a.recovery_width &&
+             chamber_walls(a.recovery_goal,a.recovery_width,a.recovery_height)==0;
+  }
+  if(near && !sheltered && a.floors[5].up>=0 && path_near(a.floors[5].up,150))try travel(0) as TRAVEL;
+ }
+}
+
+/* [38] r_lgi_supply (SUPPLY): Ice stream (lg_ice.inc): supply goals, below fights and escapes. */
+rule r_lgi_supply [supply] {
+ int act=-1;
+ /* Ice stream (lg_ice.inc): supply goals, below fights and escapes. */
+ {int sk=TRAVEL;act=lg_ice_supply(&sk);if(act>=0)emit act as sk;}
+}
+
+/* [39] r_ice_enchant_visit (BUILD): With the ice-armour trip pending, every Ice step is taken in fire armour (frost troll hits 5.8-7.4; 4% of entrants died on this first visit, p90 126 steps spent drinking or healing). */
+rule r_ice_enchant_visit [build] {
+ /* With the ice-armour trip pending, every Ice step is taken in fire armour
+  * (frost troll hits 5.8-7.4; 4% of entrants died on this first visit, p90
+  * 126 steps spent drinking or healing). Fire is the safer floor in fire
+  * armour and the Troll Mines have water: drink only beside the arrival
+  * ladder, then leave. Adjacent fights are still handled above. */
+ if(a.level==7 && enchant_trip() && o.drink>=2) {
+  if(o.drink<5+2*o.dex)try seek_block(WATER,4) as DRINK;
+  try travel(0) as TRAVEL;
+ }
+}
+
+/* [40] p_supply_flags (SUPPLY): Recovery and drinking flags (a->recovering, a->drinking). */
+rule p_supply_flags [supply] {
+ if(a.recovering && o.energy>=7+2*o.dex && o.health>=8+o.str-0.01f)a.recovering=0;
+ if(o.drink>=7+2*o.dex){a.drinking=0;a.water_goal=-1;}
+ if(o.drink<=(a.recovering?2:cfg.drink_at) || (!a.achieved[4] && o.drink<=8))a.drinking=1;
+}
+
+/* [41] r_drink (SUPPLY): Drinking flag set and not holding: seek water. */
+rule r_drink [supply] {
+ if(a.drinking && !ctx.hold)try seek_water() as DRINK;
+ /* Supply planner (SP_DRINK): no water within seek_water's radius. */
+ if(SP_DRINK && a.drinking && !ctx.hold)try sp_plan_drink() as TRAVEL;
+}
+
+/* [42] r_lgm_supply (SUPPLY): mid stream (lg_mid.inc): troll-phase supply goals; inert outside its region. */
+rule r_lgm_supply [supply] {
+ int act=-1;
+ /* With no mines water known, the climb to the Vault's fountains at drink 0
+  * starts while health already drains and often ends in a thirst death up
+  * there. Leave while two drinks remain. */
+/* mid stream (lg_mid.inc): troll-phase supply goals; inert outside its region. */
+ {int sk=EAT;act=lg_mid_supply(ctx.hold,&sk);if(act>=0)emit act as sk;}
+}
+
+/* [43] r_mines_thirst_climb (SUPPLY): Troll Mines drink <= 2 while drinking: climb. */
+rule r_mines_thirst_climb [supply] {
+ if(a.level==5 && a.drinking && o.drink<=2)try travel(0) as TRAVEL;
+}
+
+/* [44] r_mines_food_leave (SUPPLY): Floor 5 is a food desert: its bats are seen only on lit cells (4 meals per 1,000 steps against 7 on floors 3-4). */
+rule r_mines_food_leave [supply] {
+ /* Floor 5 is a food desert: its bats are seen only on lit cells (4 meals
+  * per 1,000 steps against 7 on floors 3-4). Climbs at food 0 died on 12% of
+  * trips, health already draining on the walk. Leave at food 3 instead
+  * when no animal is in reach; the lit floors above have visible ones. */
+ if(TB2 && a.level==5 && troll_phase() && (o.food<=3 || sp_food_leave()) && !ctx.hold && !lg_mid_owns_food()) {
+  try forage() as EAT;
+  try travel(0) as TRAVEL;
+ }
+}
+
+/* [45] r_shallow_thirst_climb (SUPPLY): Without reachable water on floor 1, the climb used to start at zero drink, after health had begun to fall, through corridors where mobs block the route. */
+rule r_shallow_thirst_climb [supply] {
+ /* Without reachable water on floor 1, the climb used to start at zero drink,
+  * after health had begun to fall, through corridors where mobs block the
+  * route. Leave with enough drink for the trip. Agents climbing from dark
+  * mines without torches arrived on floor 1 at zero drink and died there. */
+ if((a.level==1 || a.level==2) && a.drinking && o.drink<=(shallow() && a.level==2?4:3))try travel(0) as TRAVEL;
+}
+
+/* [46] r_ow_water_seek (SUPPLY): Shallow: remembered water beyond the 100-step radius is still water; a tree search had led one agent 120 steps from it (arrive1 ep 29). */
+rule r_ow_water_seek [supply] {
+ /* With no reachable water known, waiting in a shelter cannot restore
+  * hydration. Search for water before recovery takes over. */
+/* Shallow: remembered water beyond the 100-step radius is still water;
+  * a tree search had led one agent 120 steps from it (arrive1 ep 29). */
+ if(shallow() && a.level==0 && a.drinking)try seek_block(WATER,500) as DRINK;
+}
+
+/* [47] r_ow_water_explore (SUPPLY): Overworld, drinking at drink <= 2: explore for water. */
+rule r_ow_water_explore [supply] {
+ if(a.level==0 && a.drinking && o.drink<=2)try explore() as EXPLORE;
+}
+
+/* [48] r_vault_water_climb (SUPPLY): The Vault has about four fountains and some maps have none. */
+rule r_vault_water_climb [supply] {
+ /* The Vault has about four fountains and some maps have none. A recovery
+  * sleep there can use up the remaining drink before one is found, and the
+  * drink==0 climb below starts with health already draining. Climb to the
+  * Sewers' plentiful water while the trip is still affordable. */
+ if(a.level==4 && o.drink<=4 && seek_block(WATER,100)<0)try travel(0) as TRAVEL;
+}
+
+/* [49] r_ice_food_return (SUPPLY): Ice has no reliable food supply. */
+rule r_ice_food_return [supply] {
+ /* Ice has no reliable food supply. Start the return before starvation
+  * consumes the health needed to cross the cleared Fire Realm. */
+ if(a.level==7 && o.food<=3)try travel(0) as TRAVEL;
+}
+
+/* [50] r_fire_food_return (SUPPLY): A food return must continue through Fire when no animal is reachable. */
+rule r_fire_food_return [supply] {
+ /* A food return must continue through Fire when no animal is reachable.
+  * Descending straight back to Ice would repeat the trip without refilling. */
+ if(a.level==6 && a.floors[7].seen && o.food<=2) {
+  try forage() as EAT;
+  try travel(0) as TRAVEL;
+ }
+}
+
+/* [51] r_fire_energy_heal (SUPPLY): Fire phase on Fire: energy potion, or climb to sleep/heal by the mines water. */
+rule r_fire_energy_heal [supply] {
+ if(ctx.fire && a.level==6) {
+  /* An identified energy potion (+8) buys a full visit without sleeping. */
+  if(o.energy<=cfg.sleep_at)
+   for(int i=0;i<6;i++)if(o.potions[i] && a.potion_effect[i]==4)emit POTION_RED+i as RECOVER;
+  /* Sleep and healing need water. A shelter here drains drink that no rest
+   * restores, and the pack that gathers outside meets us on waking (ep 1).
+   * Climb to the mines water for both; a player whose armour leaves a big
+   * blow leaves before the second one can kill. */
+  if(o.energy<=cfg.sleep_at || o.health<=fire_retreat())try travel(0) as TRAVEL;
+ }
+}
+
+/* [52] r_fire_drink_leave (SUPPLY): Fire has no water. */
+rule r_fire_drink_leave [supply] {
+ /* Fire has no water. Leave enough hydration and health for the route
+  * back to the mines, rather than starting it after starvation begins. */
+ if(a.level==6 && (o.drink<=2 || o.health<=4))try travel(0) as TRAVEL;
+}
+
+/* [53] r_eat_forage (SUPPLY): Food at the eat threshold: forage animals in view. */
+rule r_eat_forage [supply] {
+ if(o.food<=(a.recovering||ctx.hold?2:cfg.eat_at)) {
+  try forage() as EAT;
+ }
+}
+
+/* [54] r_shallow_hunger (SUPPLY): forage() sees only animals in view. */
+rule r_shallow_hunger [supply] {
+ /* forage() sees only animals in view. Agents slept at food 0 on the
+  * Overworld and woke at 2 health (arrive1 ep 2); Overworld starvation was
+  * 368 of 16,384 capture deaths. Animals spawn 3-14 cells away at 10% a step
+  * on every lit shallow floor: walk to find one. In the Dungeon, climb when
+  * none shows (the Overworld always has cows), instead of waiting for 0. */
+ if(shallow() && a.level<=1 && o.food<=2 && wm_incoming_damage(NOOP)==0) {
+  try hunt(2,40) as EAT;
+  if(a.level==1 && a.floors[1].up>=0)try travel(0) as TRAVEL;
+  try explore() as EAT;
+ }
+}
+
+/* [55] r_mines_hunger_climb (SUPPLY): Gnomish Mines (shallow) food <= 3: climb. */
+rule r_mines_hunger_climb [supply] {
+ if(shallow() && a.level==2 && o.food<=3 && a.floors[2].up>=0)try travel(0) as TRAVEL;
+}
+
+/* [56] r_fire_coal_wood (BUILD): Ice has no coal, and coal is a torch. */
+rule r_fire_coal_wood [build] {
+ /* Ice has no coal, and coal is a torch. Fire is lit and 5% of its stone
+  * is coal; fire trees give wood. Collect near the route during supply
+  * visits while healthy, so that Ice exploration never stalls unlit. */
+ if(a.level==6 && a.floors[7].seen && !enchant_trip() && o.health>=6 && wm_incoming_damage(NOOP)==0) {
+  if(o.inv[I_COAL]<8)try seek_block(COAL,12) as GATHER;
+  if(o.inv[0]<6)try seek_block(TREE,12) as GATHER;
+ }
+}
+
+/* [57] r_ice_wood (BUILD): Cleared Ice, low wood with coal: ice_wood. */
+rule r_ice_wood [build] {
+ if(a.level==7 && o.clear && o.inv[0]<4 && o.inv[I_COAL]>0)try ice_wood() as GATHER;
+}
+
+/* [58] p_resupply_start (BUILD): A wood resupply from the Troll Mines is a ten-floor round trip. */
+rule p_resupply_start [build] {
+ /* A wood resupply from the Troll Mines is a ten-floor round trip. Torches,
+  * the reason for wood there, are usually in stock (ep 70: 57 torches). */
+ if(troll_phase() && a.level>=3 && o.inv[I_TORCH]>=8)a.resupplying=0;
+ /* A dark Mines floor with no torch and no wood cannot be explored: search
+  * the Overworld for trees again while that search budget lasts. */
+ if(shallow() && a.level==2 && a.wood_exhausted && a.shallow_search<6000 && !o.inv[I_TORCH] && !o.inv[0] && a.floors[2].down<0)a.wood_exhausted=0;
+ if(a.level>0 && a.level<8 && o.inv[0]<4 && !a.resupplying && !a.wood_exhausted && !(troll_phase() && o.inv[I_TORCH]>=8) &&
+    !(ICETRIP_WOOD && icetrip())){a.resupplying=1;a.resupply_tick=a.t;}
+ /* Dungeon walls cannot be mined, so stone spent there is gone. Every
+  * shelter needs it: agents without stone slept unsealed at energy 1 and a
+  * single orc blow (3x3.5) killed them from full health (14 of 48 sampled
+  * floor-1 deaths, ep 30, 72, 99). Fetch more from the Overworld in time. */
+ if(a.level==1 && early() && o.inv[1]<3 && o.inv[I_PICK]>0 && !a.resupplying){a.resupplying=1;a.resupply_tick=a.t;}
+}
+
+/* [59] r_supply_floor_hunt (SUPPLY): Starving on a supply visit, the climb rule below walks floor after floor towards the Overworld's cows and dies on the way (L3/L4 starvation, 6% of Troll Mines entrants). */
+rule r_supply_floor_hunt [supply] {
+ /* Starving on a supply visit, the climb rule below walks floor after floor
+  * towards the Overworld's cows and dies on the way (L3/L4 starvation, 6% of
+  * Troll Mines entrants). The lit floors 3-4 have animals: search here. */
+ if(TB2 && troll_phase() && (a.level==3 || a.level==4) && o.food==0 && o.drink>0) {
+  try hunt(2,60) as EAT;
+  try frontier_walk() as EXPLORE;
+  try explore() as EXPLORE;
+ }
+}
+
+/* [60] r_starving_climb (SUPPLY): Icetrip: no food climb above the Troll Mines (see icetrip_mines). */
+rule r_starving_climb [supply] {
+ /* Icetrip: no food climb above the Troll Mines (see icetrip_mines). */
+ int mines_food=ICETRIP_MINESTAY && icetrip() && a.level==5 && a.icetrip_dest==ICETRIP_MINES && !enchant_trip() && o.drink>0;
+ if(a.level>0 && a.level<8 && (o.food==0 || o.drink==0) && !mines_food)try travel(0) as TRAVEL;
+}
+
+/* [61] p_needs_healing (SUPPLY): Whether health needs a heal (ctx->needs_healing): per-floor thresholds (cleared Ice, Graveyard), troll_low, two Vault knight hits, Sewers revisit. */
+rule p_needs_healing [supply] {
+ /* Start Ice recovery with enough health to reach and seal a shelter.
+  * Fully healed players need no shelter even with a low strength stat. */
+/* Cleared Ice needs no kills, only the exit, and health returns at the same
+  * rate while lighting as in a shelter: 44% of cleared-Ice steps were spent
+  * healing, and every food trip during the search risks 2-15%. Heal there
+  * only when another frost troll hit would leave little. */
+ float ice_heal=a.level==7 && o.clear?fmaxf(6,wm_attack_damage(8)+2.5f):10;
+ ctx.needs_healing=o.health<8+o.str-0.01f && o.health<=(a.level==8?GRAVEYARD_RECOVER_HEALTH:a.level==7?ice_heal:6);
+ if(ctx.troll_low)ctx.needs_healing=1;
+ /* Vault knights cannot be killed without taking one hit, and two often
+  * arrive together. Enter that fight only able to absorb both hits. */
+ if(a.level==4 && o.health<8+o.str-0.01f && o.health<=2*wm_attack_damage(5))ctx.needs_healing=1;
+ /* A Sewers revisit is a retreat from the Vault. Descend again only at full
+  * health: two knight hits there take most of a partial heal. */
+ if(a.level==3 && a.floors[4].seen && !a.resupplying && o.health<8+o.str-0.01f)ctx.needs_healing=1;
+}
+
+/* [62] r_vault_heal_climb (COMBAT): Vault shelters are built beside knights that chase at most of our speed: a recovery started with one within three cells ends in death about one time in four. */
+rule r_vault_heal_climb [combat] {
+ /* Vault shelters are built beside knights that chase at most of our speed:
+  * a recovery started with one within three cells ends in death about one
+  * time in four. Climbing leaves every pursuer frozen on this floor, and the
+  * cleared Sewers have water for the long heal. A knight that follows cannot
+  * attack while we keep moving, so the ladder's distance is not limited; this
+  * also covers returns from the Troll Mines, which land far from it. */
+ if(a.level==4 && !a.recovering && ctx.needs_healing && o.food>2 && o.drink>2 && !ctx.vault_calm &&
+    a.floors[4].up>=0)try travel(0) as TRAVEL;
+}
+
+/* [63] r_graveyard_recover (SUPPLY): Graveyard: recover when recovering or needing healing. */
+rule r_graveyard_recover [supply] {
+ if(a.level==8 && (a.recovering || (ctx.needs_healing && o.food>0 && o.drink>0))) {
+  a.recovering=1;try recover() as RECOVER;
+ }
+}
+
+/* [64] r_mines_preheal_supply (SUPPLY): Provision before a Troll Mines heal: long sealed heals ran food or drink down to the leave-the-shelter threshold of 2 while health was still low (healing is 46% of uncleared floor-5 time). */
+rule r_mines_preheal_supply [supply] {
+ /* Provision before a Troll Mines heal: long sealed heals ran food or drink
+  * down to the leave-the-shelter threshold of 2 while health was still low
+  * (healing is 46% of uncleared floor-5 time). Top up first when a pool or
+  * a bat is close and no troll is. */
+ if(a.level==5 && mines_guard() && !a.recovering && ctx.needs_healing && o.health>=4 && !wm_melee_within(4)) {
+  if(o.drink<=6 && water_cost()<=80){a.drinking=1;try seek_water() as DRINK;}
+  if(o.food<=5)try hunt(2,8) as EAT;
+ }
+}
+
+/* [65] r_recover (SUPPLY): Recovery (shelter, sleep, heal) when recovering, tired, at the sleep threshold or needing healing; never sleep unsealed in the Dungeon (climb). */
+rule r_recover [supply] {
+ int act=-1;
+ /* The Dungeon sends tired agents up to sleep at energy 5. Sleep before
+  * going back down, or the two rules bounce between the ladders (63 climbs
+  * per world) until energy reaches the usual threshold of 3. */
+ int tired=a.level==0 && !a.floors[5].seen && a.floors[1].seen && o.energy<=5;
+ if((a.recovering || o.energy<=cfg.sleep_at || tired || (ctx.needs_healing && o.food>2 && o.drink>2)) && a.level<8) {
+  a.recovering=1;act=recover();
+  /* Never sleep unsealed in the Dungeon: climb to the Overworld instead. */
+  if(act==SLEEP && a.level==1 && early() && !sealed_in())try travel(0) as TRAVEL;
+  if(act>=0)emit act as RECOVER;
+ }
+}
+
+/* [66] r_strategic (BUILD): Strategic goals (full_strategic.inc): below survival, above the gear, supply and descent rules. */
+rule r_strategic [build] {
+ int act=-1;
+ /* Strategic goals (full_strategic.inc): below survival, above the gear,
+  * supply and descent rules. */
+ {int sk=EXPLORE;act=strategic(&sk);if(act>=0)emit act as sk;}
+}
+
+/* [67] r_troll_plates (BUILD): Full diamond plates at Troll Mines entry raise P(8) .24 -> .53 (oracle, bank E): a plate takes 0.6 off every troll blow, 0.4 off every slimeball, and carries through Fire and Ice. */
+rule r_troll_plates [build] {
+ /* Full diamond plates at Troll Mines entry raise P(8) .24 -> .53 (oracle,
+  * bank E): a plate takes 0.6 off every troll blow, 0.4 off every slimeball,
+  * and carries through Fire and Ice. Plate every three diamonds, and mine
+  * every diamond seen while it is safe to walk. */
+ if(TB7 && a.level==5 && troll_phase() && wm_armour()<8 && o.inv[I_PICK]>=3) {
+  if(o.inv[4]>=3)try craft(DIAMOND_ARMOUR) as CRAFT;
+  if(!ctx.troll_low && !wm_melee_within(4) && o.food>2 && o.drink>2)try seek_block(DIAMOND,150) as GATHER;
+ }
+}
+
+/* [68] r_icetrip_mines_stay (SUPPLY): The mines stop of a food excursion whose Fire wait found no bat: stay until fed. */
+rule r_icetrip_mines_stay [supply] {
+ /* The mines stop of a food excursion whose Fire wait found no bat: stay
+  * until fed. The base descended whenever no bat was in view, bouncing 5<->6
+  * every step down to food 0, then climbed to the Vault and Sewers, where
+  * 380 of 4,000 Ice entrants starved. Drink, rest and heal above; here hunt
+  * what the torches show and walk the lit tunnels; go back down when fed. */
+ if(ICETRIP_MINESTAY && icetrip() && a.level==5 && a.icetrip_dest==ICETRIP_MINES && !enchant_trip()) {
+  /* Starving here for a minute: Fire's lit bats on the way home instead. */
+  int stay=a.t-a.floors[5].entered;
+  if(o.food>=7+2*o.dex-3 || stay>=300 || (o.food==0 && stay>=60)){a.icetrip_dest=ICETRIP_HOME;try travel(1) as TRAVEL;}
+  try hunt(2,20) as EAT;
+  try explore() as EXPLORE;
+ }
+}
+
+/* [69] r_icetrip_prospect (BUILD): Diamond plates on excursions through the Troll Mines. */
+rule r_icetrip_prospect [build] {
+ /* Diamond plates on excursions through the Troll Mines. Each plate takes
+  * 0.3 off every pigman blow and fireball and 0.4 off every frost troll blow
+  * and iceball (oracles: +6 diamonds at Ice arrival +14.2pp, full diamond
+  * armour +23.3pp). Ice entrants carry 0.9 diamonds and armour 5; the mines
+  * still hold 5.1 diamonds, 3.1 within 40 steps of the down ladder, but the
+  * agent knows 0.2 of them: the mines are dark and those cells were never
+  * lit. An enchant trip's outbound rule skipped even the known ones. While
+  * safe and supplied, mine known diamonds close by, craft a plate at three,
+  * and light unseen rock near the route (one torch shows ~69 cells, ~0.7
+  * diamond in stone), keeping torches for Ice. */
+ if(ICETRIP_DIA && icetrip() && a.level==5 && wm_armour()<8 && o.inv[I_PICK]>=3) {
+  if(a.t && a.previous.level!=5)a.icetrip_prospect=0;
+  int safe=!wm_melee_within(6) && o.health>=8 && o.food>=3 && o.drink>=3 && o.energy>=3;
+  if(safe && o.inv[I_DIAMOND]>=3)try craft(DIAMOND_ARMOUR) as CRAFT;
+  if(safe)try seek_block(DIAMOND,ICETRIP_DIA_SEEK) as GATHER;
+  if(safe && o.inv[I_TORCH]>=12 && a.icetrip_prospect<ICETRIP_DIA_STEPS) {
+   a.icetrip_prospect++;
+   try light_unseen(ICETRIP_DIA_GAIN,ICETRIP_DIA_PATH) as LIGHT;
+  }
+ }
+}
+
+/* [70] r_ice_enchant_trip (BUILD): Ice has no enchantment table. */
+rule r_ice_enchant_trip [build] {
+ /* Ice has no enchantment table. Reuse the cleared route to the Sewers
+  * with the sapphires gathered in the mines, then resume the expedition.
+  * Armour takes precedence over spending a preparation gem on the sword. */
+ if(a.floors[7].seen && wm_armour() && o.inv[I_SAPPHIRE]) {
+  int ice=0;for(int i=0;i<4;i++)ice+=o.armour_enchant[i]==2;
+  if(ice<4) {
+   if(a.level>3 && a.level<=7)try travel(0) as TRAVEL;
+   if(a.level==3) {
+    if(o.mana>=9)try seek(ICE_TABLE,ENCHANT_ARMOUR,160) as MAGIC;
+    else try recover() as RECOVER;
+    /* An unseen table or recovering mana must not send us back down
+     * into an immediate Vault-to-Sewers return loop. */
+    try explore() as EXPLORE;
+   }
+  }
+ }
+}
+
+/* [71] r_lgm_xp (BUILD): mid stream (lg_mid.inc): troll-phase attribute spending (off by default). */
+rule r_lgm_xp [build] {
+ /* mid stream (lg_mid.inc): troll-phase attribute spending (off by default). */
+ if(lg_mid_xp())emit LEVEL_DEX as UPGRADE;
+}
+
+/* [72] r_lgi_xp (BUILD): Ice stream (lg_ice.inc): attribute spending at Ice arrival. */
+rule r_lgi_xp [build] {
+ int act=-1;
+ /* Ice stream (lg_ice.inc): attribute spending at Ice arrival. */
+ {act=lg_ice_xp();if(act>=0)emit act as UPGRADE;}
+}
+
+/* [73] r_xp_spend (BUILD): Spend XP: int on floors >= 6, then str/int/str/int/dex order. */
+rule r_xp_spend [build] {
+ if(o.xp) {
+  /* The last floor rewards strengthen spells against elemental resistance.
+   * Keep the earlier strength upgrades for ordinary enemies and preparation. */
+  if(a.level>=6 && o.intelligence<5)emit LEVEL_INT as UPGRADE;
+  if(o.str<(cfg.str_first?3:2))emit LEVEL_STR as UPGRADE;
+  if(o.intelligence<3)emit LEVEL_INT as UPGRADE;
+  if(o.str<5)emit LEVEL_STR as UPGRADE;
+  if(o.intelligence<5)emit LEVEL_INT as UPGRADE;
+  if(o.dex<5)emit LEVEL_DEX as UPGRADE;
+ }
+}
+
+/* [74] r_troll_ruby_trip (BUILD): Fire plates also take 0.6 off every slimeball and 0.2 off every troll blow, and most floor-5 deaths come before clearance; the armour trip used to wait for it. */
+rule r_troll_ruby_trip [build] {
+ /* A troll survives one unenchanted diamond-sword blow plus a spell, so
+  * pre-casting cannot spare the hit it lands. One ruby at the Vault's fire
+  * table fixes that: climb back from the mines at full health to enchant. */
+/* Fire plates also take 0.6 off every slimeball and 0.2 off every troll blow,
+  * and most floor-5 deaths come before clearance; the armour trip used to wait
+  * for it. With rubies, mana for an enchant and no troll near the ladder side,
+  * go now (mobs left behind stay where they are, so leave with none close). */
+ if(TB13 && a.level==5 && troll_phase() && !o.clear && wm_armour() && o.inv[I_RUBY]>0 && o.mana>=9 && o.health>6 &&
+    o.food>3 && o.drink>3 && !wm_melee_within(6) && vault_trip_ok()) {
+  int fe=0;for(int i=0;i<4;i++)fe+=o.armour_enchant[i]==1;
+  if(fe<4 && a.floors[5].up>=0 && path_near(a.floors[5].up,300))try travel(0) as TRAVEL;
+ }
+}
+
+/* [75] r_sword_enchant_trip (BUILD): Troll phase: ruby (Vault) or sapphire (Sewers) sword-enchant trip. */
+rule r_sword_enchant_trip [build] {
+ if(a.floors[5].seen && !a.floors[6].seen && !o.sword_enchant && o.inv[I_RUBY]>0 && vault_trip_ok()) {
+  if(a.level==5 && o.health>=8+o.str-0.01f && troll_mana_ok())try travel(0) as TRAVEL;
+  if(a.level==4) {
+   if(!fire_table_known()) {
+    a.vault_search++;
+    if(troll_phase()){try frontier_walk() as EXPLORE;a.vault_search=vault_limit();}
+    try explore() as EXPLORE;
+   }
+   /* A remembered table beyond the 100-step radius made the trip descend at
+    * once and climb again from the mines, thousands of times (ep 541). */
+   if(o.mana>=9)try seek(FIRE_TABLE,ENCHANT_SWORD,troll_phase()?400:100) as MAGIC;
+   if(troll_phase() && fire_table_known() && o.mana>=9 && a.vault_search<vault_limit()) {
+    a.vault_search++;try frontier_walk() as EXPLORE;a.vault_search=vault_limit();
+   }
+   if(o.mana<9)try recover() as RECOVER;
+  }
+ }
+ /* Without a ruby, a sapphire buys the same blow at the Sewers' ice table,
+  * two cleared floors up. The search there shares the trip budget. */
+ else if(a.floors[5].seen && !a.floors[6].seen && !o.sword_enchant && o.inv[I_SAPPHIRE]>0 && a.vault_search<600) {
+  if((a.level==5 || a.level==4) && o.health>=8+o.str-0.01f)try travel(0) as TRAVEL;
+  if(a.level==3) {
+   if(o.mana>=9)try seek(ICE_TABLE,ENCHANT_SWORD,160) as MAGIC;
+   else try recover() as RECOVER;
+   a.vault_search++;try explore() as EXPLORE;
+  }
+ }
+}
+
+/* [76] r_icetrip_fire_wood (BUILD): Icetrip: Ice's wood<4 rule sends the agent on a ten-floor trip to the Overworld (0.22 per run once plates and torches use wood; 6% died). */
+rule r_icetrip_fire_wood [build] {
+ /* Icetrip: Ice's wood<4 rule sends the agent on a ten-floor trip to the
+  * Overworld (0.22 per run once plates and torches use wood; 6% died). Fire
+  * trees give wood: cut them on the way and end the trip there. (Clearing the
+  * flag without wood made Ice re-raise it: an endless 6<->7 bounce.) The
+  * flag is also no longer raised on excursion floors (below), where plates
+  * and torches had drained wood in the mines. */
+ if(ICETRIP_WOOD && icetrip() && a.resupplying && a.level==6) {
+  if(o.inv[0]>=6)a.resupplying=0;
+  else try seek_block(TREE,40) as GATHER;
+ }
+}
+
+/* [build] r_cb_coal (BUILD): Gnomish Mines out of light (no torch, no coal) with an iron sword or an empty armour
+ * slot: a coal/torch resupply trip to the Overworld (see cb_coaltrip). */
+rule r_cb_coal [build] {
+ int act=-1,sk=GATHER;
+ act=cb_coaltrip(&sk);if(act>=0)emit act as sk;
+}
+
+/* [77] r_resupply_climb (BUILD): Wood/stone resupply trip: climb towards the Overworld. */
+rule r_resupply_climb [build] {
+ if(a.resupplying && a.level>0 && a.level<8)try travel(0) as TRAVEL;
+}
+
+/* [78] p_resupply_end (BUILD): Shallow: a wood trip ends after 2,500 steps with whatever it found. */
+rule p_resupply_end [build] {
+ if(a.resupplying && a.level==0 && o.inv[0]>=cfg.wood_stock && o.inv[1]>=10 &&
+    (o.inv[8]>=cfg.torch_stock || a.t-a.resupply_tick>600))a.resupplying=0;
+ /* Shallow: a wood trip ends after 2,500 steps with whatever it found. Known
+  * but unreachable trees kept one trip going until a thirst death 12,000
+  * steps later (arrive1 ep 29). */
+ if(shallow() && a.resupplying && a.level==0 && a.t-a.resupply_tick>2500) {
+  a.resupplying=0;if(o.inv[0]<4)a.wood_exhausted=1;
+ }
+ /* Felled trees become grass and never regrow. Agents that had cut every
+  * tree they knew stayed on the trip, exploring until they starved (5% of
+  * episodes). Continue with the wood in hand once none is left in memory. */
+ if(a.resupplying && a.level==0 && a.t-a.resupply_tick>600 && !(shallow() && a.shallow_search<6000)) {
+  int trees=0;
+  for(int p=(a.floors[0]).known_lo;p<=(a.floors[0]).known_hi && !trees;p++)trees=(a.floors[0]).map[p]==TREE;
+  if(!trees){a.resupplying=0;a.wood_exhausted=1;}
+ }
+}
+
+/* [79] r_read_book (BUILD): Read a book while a spell is missing. */
+rule r_read_book [build] {
+ if(o.inv[I_BOOK] && (!o.spells[0]||!o.spells[1]))emit READ_BOOK as MAGIC;
+}
+
+/* [80] r_ach_fireball (BUILD): Achievement: cast fireball once. */
+rule r_ach_fireball [build] {
+ if(!a.achieved[56] && o.spells[0] && o.mana>=2)emit FIREBALL as MAGIC;
+}
+
+/* [81] r_ach_iceball (BUILD): Achievement: cast iceball once. */
+rule r_ach_iceball [build] {
+ if(!a.achieved[58] && o.spells[1] && o.mana>=2)emit ICEBALL as MAGIC;
+}
+
+/* [82] r_ach_potion (BUILD): Achievement: drink a potion once (health >= 7). */
+rule r_ach_potion [build] {
+ if(!a.achieved[62] && o.health>=7)for(int i=0;i<6;i++)if(o.potions[i])emit POTION_RED+i as LOOT;
+}
+
+/* [83] r_craft_wood_pick (BUILD): Craft a wood pickaxe. */
+rule r_craft_wood_pick [build] {
+ if(o.inv[I_PICK]<1)try craft(WOOD_PICK) as CRAFT;
+}
+
+/* [84] r_craft_wood_sword (BUILD): Craft a wood sword. */
+rule r_craft_wood_sword [build] {
+ if(o.inv[I_SWORD]<1)try craft(WOOD_SWORD) as CRAFT;
+}
+
+/* [85] r_craft_stone_sword (BUILD): Craft a stone sword. */
+rule r_craft_stone_sword [build] {
+ if(o.inv[I_SWORD]<2)try craft(STONE_SWORD) as CRAFT;
+}
+
+/* [86] r_farm_sapling (BUILD): Overworld: collect a sapling from grass (farming achievement). */
+rule r_farm_sapling [build] {
+ if(a.level==0 && !a.achieved[3] && a.farm_attempts<40 && o.inv[I_SWORD]>=2)try seek_block(GRASS,5) as FARM;
+}
+
+/* [87] r_farm_plant (BUILD): Overworld: plant a sapling. */
+rule r_farm_plant [build] {
+ if(a.level==0 && o.inv[7] && !a.achieved[7])try place(PLACE_PLANT) as FARM;
+}
+
+/* [88] r_craft_stone_pick (BUILD): Craft a stone pickaxe. */
+rule r_craft_stone_pick [build] {
+ if(o.inv[I_PICK]<2)try craft(STONE_PICK) as CRAFT;
+}
+
+/* [89] p_floor_prepare (CORE): Current floor record (ctx->f) and Overworld preparation window (ctx->prepare). */
+rule p_floor_prepare [core] {
+ 
+ ctx.prepare=a.level==0 && a.floors[a.level].steps<cfg.prepare_steps;
+}
+
+/* [90] r_craft_iron_sword (BUILD): Craft an iron sword (preparation, mines, or with iron and coal). */
+rule r_craft_iron_sword [build] {
+ if(o.inv[I_SWORD]<3 && (ctx.prepare||a.level==2||a.level==5 || (o.inv[2] && o.inv[3])))try craft(IRON_SWORD) as CRAFT;
+}
+
+/* [91] r_craft_iron_pick (BUILD): Craft an iron pickaxe (preparation, mines, or with iron and coal). */
+rule r_craft_iron_pick [build] {
+ if(o.inv[I_PICK]<3 && (ctx.prepare||a.level==2||a.level==5 || (o.inv[2] && o.inv[3])))try craft(IRON_PICK) as CRAFT;
+}
+
+/* [92] r_craft_diamond_sword (BUILD): Craft a diamond sword. */
+rule r_craft_diamond_sword [build] {
+ if(o.inv[I_SWORD]<4 && o.inv[I_PICK]>=3)try craft(DIAMOND_SWORD) as CRAFT;
+}
+
+/* [93] r_craft_diamond_pick (BUILD): Shallow: Mines diamonds go to plates, not to the diamond pick. */
+rule r_craft_diamond_pick [build] {
+ /* Shallow: Mines diamonds go to plates, not to the diamond pick. Full diamond
+  * armour at the Troll Mines entry lifts P(8) .227 -> .531 (troll stream's
+  * armour oracle); the Mines hold ~5 diamonds and the Troll Mines ~9 at a far
+  * higher hazard. The pick (sapphires, rubies) waits for the Troll Mines. */
+ if(o.inv[I_PICK]<4 && o.inv[I_PICK]>=3 && !(shallow() && wm_armour()<8))try craft(DIAMOND_PICK) as CRAFT;
+}
+
+/* [94] r_craft_first_iron_armour (BUILD): Achievement: first iron armour piece. */
+rule r_craft_first_iron_armour [build] {
+ if(!a.achieved[26] && o.inv[2]>=3 && o.inv[3]>=3)try craft(IRON_ARMOUR) as CRAFT;
+}
+
+/* [95] r_craft_diamond_armour (BUILD): Craft a diamond plate with three diamonds. */
+rule r_craft_diamond_armour [build] {
+ if(wm_armour()<8 && o.inv[4]>=3)try craft(DIAMOND_ARMOUR) as CRAFT;
+}
+
+/* [96] r_mines_diamonds (BUILD): Mine protective plates while the enemies are still weak. */
+rule r_mines_diamonds [build] {
+ /* Mine protective plates while the enemies are still weak. Diamonds
+  * already exposed in the Gnomish Mines otherwise remain unused until
+  * the much more dangerous Troll Mines expedition. */
+ if(a.level==2 && o.inv[I_PICK]>=(shallow()?3:4) && o.inv[I_SWORD]>=4 && wm_armour()<8)
+  try seek_block(DIAMOND,100) as GATHER;
+}
+
+/* [97] r_craft_iron_armour (BUILD): Shallow: count empty slots, not armour value; a diamond plate (2) and two iron pieces reach 4 and left the fourth slot empty. */
+rule r_craft_iron_armour [build] {
+ /* Shallow: count empty slots, not armour value; a diamond plate (2) and two
+  * iron pieces reach 4 and left the fourth slot empty. */
+ int empty_slot=0;
+ for(int i=0;i<4;i++)empty_slot+=o.armour[i]==0;
+ if((shallow()?empty_slot>0:wm_armour()<cfg.armour_pieces) && (ctx.prepare||a.level==2||a.level==5))try craft(IRON_ARMOUR) as CRAFT;
+}
+
+/* [98] r_troll_empty_slot (BUILD): The rule above counts armour value, so a diamond plate hides an empty slot: 11% of Fire entrants have one, most of them carrying the 3 iron and 3 coal a piece needs (P(8 | Fire arrival) rises ~5pp per armour point). */
+rule r_troll_empty_slot [build] {
+ /* The rule above counts armour value, so a diamond plate hides an empty slot:
+  * 11% of Fire entrants have one, most of them carrying the 3 iron and 3 coal
+  * a piece needs (P(8 | Fire arrival) rises ~5pp per armour point). */
+ if(TB14 && troll_phase() && a.level>=3 && a.level<=5) {
+  int empty=0;for(int i=0;i<4;i++)empty+=o.armour[i]==0;
+  if(empty && (a.level==5 || (o.inv[2]>=3 && o.inv[3]>=3)))try craft(IRON_ARMOUR) as CRAFT;
+ }
+}
+
+/* [99] r_ow_wood (BUILD): Overworld: gather wood up to the stock. */
+rule r_ow_wood [build] {
+ if(a.level==0 && o.inv[0]<cfg.wood_stock)try seek_block(TREE,100) as GATHER;
+}
+
+/* [100] r_shallow_wood_trip (BUILD): Shallow wood trips: walk to farther known trees, then search unknown Overworld terrain for more. */
+rule r_shallow_wood_trip [build] {
+ /* Shallow wood trips: walk to farther known trees, then search unknown
+  * Overworld terrain for more. Giving up after 600 steps with no tree in
+  * memory left the mines without torches for good: every traced Mines
+  * horizon run (arrive2 ep 120, 510, 568, ...) had no wood, no torches and
+  * this flag set, and shuttled for water until step 100,000. */
+ if(shallow() && a.level==0 && a.resupplying && o.inv[0]<cfg.wood_stock) {
+  try seek_block(TREE,400) as GATHER;
+  if(a.shallow_search<6000){a.shallow_search++;try frontier_walk() as EXPLORE;}
+ }
+}
+
+/* [101] r_stone (BUILD): Overworld stone is the only shelter and arrow material the Dungeon has. */
+rule r_stone [build] {
+ /* Overworld stone is the only shelter and arrow material the Dungeon has. */
+ if(o.inv[1]<(a.level==0?(a.floors[1].seen && early()?30:10):3) && o.inv[I_PICK]>0)try seek_block(STONE,20) as GATHER;
+}
+
+/* [102] r_torches (BUILD): Wood is the mines' scarcest material (no trees below the Overworld): a table takes 2, a diamond pickaxe 1. */
+rule r_torches [build] {
+ /* Wood is the mines' scarcest material (no trees below the Overworld): a
+  * table takes 2, a diamond pickaxe 1. 38% of the iron-pickaxe Fire entrants
+  * carry the 3 diamonds for a diamond pickaxe but no wood, all of it burnt
+  * into torches here; without that pickaxe no ruby or sapphire can be mined. */
+ int wood_ok=!TB24 || !troll_phase() || a.level!=5 || o.inv[0]>=4 || o.inv[8]<4;
+ if(wood_ok && (!a.achieved[23] || o.inv[8]<cfg.torch_stock) && (a.level==0||a.level==2||a.level==5))try craft(MAKE_TORCH) as CRAFT;
+}
+
+/* [103] r_troll_torches (BUILD): Torches are the mines' exploration and dark Ice needs them too; coal is plentiful here (38 per map). */
+rule r_troll_torches [build] {
+ /* Torches are the mines' exploration and dark Ice needs them too; coal is
+  * plentiful here (38 per map). Turn spare wood into stock. */
+ if(TB18 && a.level==5 && troll_phase() && o.inv[8]<24 && o.inv[0]>=3)try craft(MAKE_TORCH) as CRAFT;
+}
+
+/* [104] r_arrows (BUILD): Arrows halve Dungeon melee damage: an arrow before an orc arrives lets one iron blow kill it. */
+rule r_arrows [build] {
+ /* Arrows halve Dungeon melee damage: an arrow before an orc arrives lets
+  * one iron blow kill it. Per 100 floor-1 steps agents took 0.80 melee damage
+  * holding six or more arrows, 1.42 with one to five and 2.56 with none.
+  * Stock them on the Overworld, where wood and stone are plentiful, and keep
+  * ten below it while eight stones remain for a shelter. */
+ if(!a.achieved[22] || (o.bow && o.inv[9]<6 && (!early() || a.level==0 || o.inv[1]>=3)) ||
+    (o.bow && early() && a.level>=1 && a.level<=4 && o.inv[9]<10 && o.inv[1]>=8 && o.inv[0]>=6) ||
+    (a.level==0 && o.bow && a.floors[1].seen && early() && o.inv[9]<(shallow() && a.floors[2].seen?20:40) && o.inv[0]>=4 && o.inv[1]>=4 &&
+     (!shallow() || !a.floors[2].seen || known_trees()>=15)))try craft(MAKE_ARROW) as CRAFT;
+}
+
+/* [105] r_ach_shoot (BUILD): Achievement: shoot an arrow once. */
+rule r_ach_shoot [build] {
+ if(!a.achieved[53] && o.bow && o.inv[9])emit SHOOT as MAGIC;
+}
+
+/* [106] r_ach_place_stone (BUILD): Achievement: place stone once. */
+rule r_ach_place_stone [build] {
+ if(!a.achieved[10] && o.inv[1])try place(PLACE_STONE) as GATHER;
+}
+
+/* [107] r_ach_place_torch (BUILD): Achievement: place a torch once. */
+rule r_ach_place_torch [build] {
+ if(!a.achieved[24] && o.inv[8])try place(PLACE_TORCH) as LIGHT;
+}
+
+/* [108] r_late_torches (BUILD): Use carried coal to replenish Ice's light without another floor trip. */
+rule r_late_torches [build] {
+ /* Use carried coal to replenish Ice's light without another floor trip.
+  * Three wood also covers a missing crafting table. */
+ if((a.level==7 || a.level==8) && o.inv[8]<6 && o.inv[2]>0 && o.inv[0]>=(a.level==8?1:3))try craft(MAKE_TORCH) as CRAFT;
+}
+
+/* [109] r_graveyard_light (NAV): Graveyard: lighting (graveyard_light). */
+rule r_graveyard_light [nav] {
+ if(a.level==8) {
+  try bm_search() as LIGHT;
+  try graveyard_light() as LIGHT;
+ }
+}
+
+/* [110] r_torch_spread_gems (NAV): Dark floors (2,5,7,8): place a torch where it reveals enough unseen cells; then Ice diamonds and nearby sapphires/rubies/diamonds. */
+rule r_torch_spread_gems [nav] {
+ if(a.level==2||a.level==5||a.level==7||a.level==8) {
+  /* Spread permanent light only where it reveals new terrain. */
+  int r=a.r+dr[o.dir],c=a.c+dc[o.dir],gain=0;
+  if(inside(r,c) && o.inv[8] && place_valid(cell(r,c),PLACE_TORCH)) {
+   for(int rr=-4;rr<=4;rr++)for(int cc=-4;cc<=4;cc++)
+    if(rr*rr+cc*cc<=22 && inside(r+rr,c+cc) && a.floors[a.level].map[cell(r+rr,c+cc)]==UNKNOWN)gain++;
+   /* Coal and resupply trips limit exploration. Walk farther into existing
+    * light before spending another torch on mostly overlapping terrain. */
+   /* Ice needs closer torch spacing to expose its ladder before scarce
+    * food forces another dangerous return through Fire. */
+   /* Graveyard has no return ladder or renewable torch materials. Broader
+    * placements preserve enough light to find the boss and stranded mobs. */
+   /* Ice: same spacing as the lighting explorer (ICE_TORCH_GAIN); ten new
+    * cells per torch exhausted coal long before the exit was found. */
+   int need=a.level==8?GRAVEYARD_TORCH_GAIN:a.level==7?ICE_TORCH_GAIN:30;
+   if(TB21 && a.level==5 && troll_phase() && o.clear && a.floors[5].down<0)need=40;
+   if(gain>=need)emit PLACE_TORCH as LIGHT;
+  }
+  /* Ice hits are mostly physical (frost troll 4, iceball 4, x(1-0.1 armour)):
+   * full diamond plates at Ice arrival were worth +22pp P(8) (armour oracle).
+   * Ice rock holds ~5 diamonds; mine those that lighting exposes. */
+  if(a.level==7 && wm_armour()<8 && o.inv[I_PICK]>=3)try seek_block(DIAMOND,40) as GATHER;
+  int stock=a.level==5?4:1,rstock=a.level==2?4:stock;
+  /* Icetrip: lighting the mines for diamonds also shows gems. After Ice a
+   * ruby has no use (fire enchants are for the first Fire expedition) and a
+   * sapphire only for a piece not yet ice-enchanted; mining them cost ~180
+   * steps per run in traces of the prospecting candidate. */
+  if(ICETRIP_GEMS && icetrip()) {
+   int ice=0;for(int i=0;i<4;i++)ice+=o.armour_enchant[i]==2;
+   stock=4-ice;rstock=0;
+  }
+  if(o.inv[I_PICK]>=4 && o.inv[5]<stock)try seek_block(SAPPHIRE,40) as GATHER;
+  /* Nearby mine rubies can protect the entire expedition at the Vault. */
+  if(o.inv[I_PICK]>=4 && o.inv[6]<rstock)try seek_block(RUBY,40) as GATHER;
+  /* The mines hold the most diamonds. Each diamond plate takes 0.6 off a
+   * troll hit, and two let full health absorb two hits with margin. */
+  if(a.level==5 && o.inv[I_SWORD]>=4 && o.inv[I_PICK]>=4 && wm_armour()<8 && o.inv[4]<3)try seek_block(DIAMOND,40) as GATHER;
+ }
+}
+
+/* [111] r_ice_return_diamonds (BUILD): The return from ice enchanting crosses the cleared Troll Mines. */
+rule r_ice_return_diamonds [build] {
+ /* The return from ice enchanting crosses the cleared Troll Mines.
+  * Gather reachable diamonds there to reduce the physical component of
+  * both Frost Troll attacks and Ice projectiles before going back. */
+ if(a.floors[7].seen && a.level==5 && o.clear && wm_armour()<8) {
+  if(o.inv[4]>=3)try craft(DIAMOND_ARMOUR) as CRAFT;
+  try seek_block(DIAMOND,60) as GATHER;
+ }
+}
+
+/* [112] r_troll_exit_light (NAV): Exit search in the dark: 5% of entrants clear the mines and never find the ladder (ep 27: 30 torches spent by the walking torch rule, then 22,000 unlit steps). */
+rule r_troll_exit_light [nav] {
+ /* Exit search in the dark: 5% of entrants clear the mines and never find the
+  * ladder (ep 27: 30 torches spent by the walking torch rule, then 22,000
+  * unlit steps). After a long search, walk to the placement that lights
+  * the most unseen cells, keeping a reserve for Ice. */
+ if(TB4 && a.level==5 && troll_phase() && o.clear && a.floors[a.level].down<0 && a.floors[a.level].steps>=2000 && o.inv[I_TORCH]>10)
+  try light_unseen(20,600) as LIGHT;
+}
+
+/* [113] r_troll_plates2 (BUILD): Diamond plates halve a troll blow (5.6 -> 3.2) and carry to Fire and Ice. */
+rule r_troll_plates2 [build] {
+ /* Diamond plates halve a troll blow (5.6 -> 3.2) and carry to Fire and Ice. */
+ if(TB5 && a.level==5 && troll_phase() && o.inv[I_PICK]>=4 && wm_armour()<8 && o.health>6) {
+  if(o.inv[4]>=3)try craft(DIAMOND_ARMOUR) as CRAFT;
+  try seek_block(DIAMOND,o.clear?100:40) as GATHER;
+ }
+}
+
+/* [114] r_troll_known_gems (BUILD): Known gems left behind: at Fire arrival agents still remember 1.35 unmined floor-5 sapphires and 0.45 diamonds (the gathering radius is 40 steps), while P(8 | Fire arrival) is .23-.29 with 0-2 sapphires and .41-.45 with  */
+rule r_troll_known_gems [build] {
+ /* Known gems left behind: at Fire arrival agents still remember 1.35 unmined
+  * floor-5 sapphires and 0.45 diamonds (the gathering radius is 40 steps),
+  * while P(8 | Fire arrival) is .23-.29 with 0-2 sapphires and .41-.45 with
+  * 3-5. Fetch remembered ones on the cleared floor before leaving it. */
+ if(TB10 && a.level==5 && troll_phase() && o.clear && o.inv[I_PICK]>=4 && o.health>6 && !wm_melee_within(4) && o.food>2 && o.drink>2) {
+  if(wm_armour()<8 && o.inv[4]>=3)try craft(DIAMOND_ARMOUR) as CRAFT;
+  if(o.inv[5]<4)try seek_block(SAPPHIRE,150) as GATHER;
+  if(wm_armour()<8)try seek_block(DIAMOND,150) as GATHER;
+ }
+}
+
+/* [115] r_troll_light_diamonds (BUILD): Diamonds sit in rock that only torches reveal (at ready5 agents remember 0.4 unmined of ~8.8). */
+rule r_troll_light_diamonds [build] {
+ /* Diamonds sit in rock that only torches reveal (at ready5 agents remember
+  * 0.4 unmined of ~8.8). Light unseen rock while plates are missing. */
+ if(TB7 && a.level==5 && troll_phase() && wm_armour()<8 && o.inv[I_PICK]>=3 && !ctx.troll_low && !wm_melee_within(4) &&
+    o.food>3 && o.drink>3 && o.inv[I_TORCH]>12 && a.floors[a.level].steps<6000)
+  try light_unseen(20,400) as LIGHT;
+}
+
+/* [116] r_troll_light_gems (BUILD): Gems sit in rock that only torches reveal: at ready5 agents remember 0.4 diamonds, 0.7 rubies and 0.9 sapphires of ~26, and gems are causal (oracles: +3 diamonds at arrival +4.5pp P(8), +6 diamonds +13.8pp, +3 sapphires  */
+rule r_troll_light_gems [build] {
+ /* Gems sit in rock that only torches reveal: at ready5 agents remember 0.4
+  * diamonds, 0.7 rubies and 0.9 sapphires of ~26, and gems are causal (oracles:
+  * +3 diamonds at arrival +4.5pp P(8), +6 diamonds +13.8pp, +3 sapphires at Fire
+  * arrival +6pp). Light unseen rock on the cleared floor while plates,
+  * sapphires or rubies are missing, within the ruby search's 4,000 steps. */
+ if(TB6 && a.level==5 && troll_phase() && o.clear && o.inv[I_PICK]>=4 && o.health>6 && a.floors[a.level].steps<4000 &&
+    o.inv[I_TORCH]>12 && o.food>3 && o.drink>3 && !wm_melee_within(4)) {
+  int fe=0;for(int i=0;i<4;i++)fe+=o.armour_enchant[i]==1;
+  if(wm_armour()<8 || o.inv[5]<4 || o.inv[6]<4-fe) {
+   if(o.inv[5]<4)try seek_block(SAPPHIRE,100) as GATHER;
+   if(o.inv[6]<4-fe)try seek_block(RUBY,100) as GATHER;
+   if(wm_armour()<8)try seek_block(DIAMOND,100) as GATHER;
+   try light_unseen(20,400) as LIGHT;
+  }
+ }
+}
+
+/* [117] r_partial_ruby_trip (BUILD): Use partial ruby stocks before entering Fire. */
+rule r_partial_ruby_trip [build] {
+ /* Use partial ruby stocks before entering Fire. Waiting for all four
+  * gems and perfect health often leaves useful protection unapplied.
+  * A bounded search gives incomplete expeditions time to find more gems
+  * without indefinitely delaying a floor whose generation lacks them. */
+ if(a.level==5 && o.clear && !a.floors[7].seen && wm_armour()) {
+  int fire=0;for(int i=0;i<4;i++)fire+=o.armour_enchant[i]==1;
+  if(fire<4) {
+   /* Enchant trips cost 272 steps and 2% deaths each (1.5 per entrant): a
+    * trip per ruby found. Carry the rubies the plates need in one trip, unless
+    * the search budget is spent or the exit is known with two in hand. */
+   int carry=!TB20 || !troll_phase() || o.inv[I_RUBY]>=4-fire || a.floors[a.level].steps>=4000 || (a.floors[a.level].down>=0 && o.inv[I_RUBY]>=2);
+   if(carry && o.inv[I_RUBY]>0 && o.health>6 && vault_trip_ok() && troll_mana_ok())try travel(0) as TRAVEL;
+   /* Waiting for mana must not hand the rubies to the descent rule below. */
+   if(carry && o.inv[I_RUBY]>0 && o.health>6 && vault_trip_ok() && !troll_mana_ok() && !wm_melee_within(6))emit NOOP as MAGIC;
+   /* Once Fire is open its rock holds more rubies than the mines. (The
+    * local `fire` here counts enchanted pieces: test the phase itself.) */
+   if(o.inv[I_RUBY]<4-fire && a.floors[a.level].steps<4000 && !fire_phase() && !(TB1 && troll_phase() && a.floors[a.level].down>=0)) {
+    try seek_block(RUBY,100) as GATHER;
+    try troll_explore() as EXPLORE;
+   }
+  }
+ }
+}
+
+/* [118] r_chest (BUILD): Loot a chest within 25 steps. */
+rule r_chest [build] {
+ try seek_block(CHEST,25) as LOOT;
+}
+
+/* [119] r_enchant (BUILD): Mana >= 9: enchant sword/armour at a table within 60 steps. */
+rule r_enchant [build] {
+ if(o.mana>=9) {
+  if(o.inv[5] && o.sword_enchant!=2 && !a.floors[7].seen)try seek(ICE_TABLE,ENCHANT_SWORD,60) as MAGIC;
+  if(o.inv[6] && !o.sword_enchant)try seek(FIRE_TABLE,ENCHANT_SWORD,60) as MAGIC;
+  int ice=0,fire=0;for(int i=0;i<4;i++){ice+=o.armour_enchant[i]==2;fire+=o.armour_enchant[i]==1;}
+  if(wm_armour()) {
+   if(o.inv[5] && (!a.achieved[64] || ((a.level==7 || (a.level==3 && a.floors[7].seen)) && ice<4)))try seek(ICE_TABLE,ENCHANT_ARMOUR,60) as MAGIC;
+   if(o.inv[6] && (!a.achieved[64] || ((a.level==4 || a.level==6) && fire<4 && !a.floors[7].seen)))try seek(FIRE_TABLE,ENCHANT_ARMOUR,60) as MAGIC;
+  }
+ }
+}
+
+/* [120] r_fire_enchant_trip (BUILD): The Vault has fire tables; the Troll Mines supply their rubies. */
+rule r_fire_enchant_trip [build] {
+ /* The Vault has fire tables; the Troll Mines supply their rubies. Return
+  * with enough gems to protect all four pieces before the Fire expedition.
+  * Clear the mines and restore health first so the return trip is survivable.
+  * A brief retreat on first Fire arrival also covers gems found en route. */
+ int fire_protection=0;
+ for(int i=0;i<4;i++)fire_protection+=o.armour_enchant[i]==1;
+ if(wm_armour() && a.floors[5].seen && !a.floors[7].seen && fire_protection<4) {
+  /* Every Vault holds one fire table, yet 182 of 5,725 Fire entrants
+   * carried four rubies unenchanted after 600 search steps; their blows
+   * cost 6.8 health instead of 2.8. Search again, by frontiers (with two
+   * or more rubies, up to 1,800 steps). A table seen through the walls may
+   * have no known route: the seek failed, the ready rule descended and the
+   * mines rule climbed straight back (12,000 bounces, ep 3628). When neither
+   * the table nor a frontier is reachable, mark the table unusable. */
+  if(ctx.fire && a.level==4 && o.inv[6] && a.vault_search<VAULT_UNUSABLE) {
+   int go=fire_table_known()?seek(FIRE_TABLE,ENCHANT_ARMOUR,400):-1;
+   if(go>=0) {
+    if(o.mana>=9)emit go as MAGIC;
+    try recover() as RECOVER;
+   } else {
+    if(a.vault_search<vault_limit()){a.vault_search++;try frontier_walk() as EXPLORE;}
+    a.vault_search=VAULT_UNUSABLE;
+   }
+  }
+  if(a.level==6 && a.floors[6].steps<3)try travel(0) as TRAVEL;
+  if(a.level==5 && o.clear && o.health>=8+o.str-0.01f && o.inv[6]>=4-fire_protection && vault_trip_ok() && troll_mana_ok())try travel(0) as TRAVEL;
+  if(a.level==4 && o.inv[6]) {
+   /* Search the cleared Vault for its single fire table instead of
+    * descending at once and repeating the climb from the mines. */
+   if(!fire_table_known() && a.vault_search<vault_limit()) {
+    a.vault_search++;
+    /* With no frontier left the search is over: end it, or the floor-5
+     * trip rule climbs straight back (4<->5 bounces). */
+    if(troll_phase()){try frontier_walk() as EXPLORE;a.vault_search=vault_limit();}
+    try explore() as EXPLORE;
+   }
+   if(o.mana>=9)try seek(FIRE_TABLE,ENCHANT_ARMOUR,troll_phase() || ctx.fire?400:100) as MAGIC;
+   /* Known but unreachable table: find a route within the search budget. */
+   if(troll_phase() && fire_table_known() && o.mana>=9 && a.vault_search<vault_limit()) {
+    a.vault_search++;try frontier_walk() as EXPLORE;a.vault_search=vault_limit();
+   }
+   if(o.mana<9)try recover() as RECOVER;
+  }
+ }
+}
+
+/* [121] p_ready (NAV): Descent readiness for the current floor (ctx->ready): kit or step budget. */
+rule p_ready [nav] {
+ ctx.ready=a.level==0?(o.inv[I_SWORD]>=3 && o.inv[I_PICK]>=3 && o.inv[0]>=cfg.wood_stock):
+   (a.level==2||a.level==5)?(o.inv[I_SWORD]>=4 && o.inv[I_PICK]>=4 && wm_armour()>=2):1;
+ if(a.level==0 && a.floors[a.level].steps>=cfg.prepare_steps)ctx.ready=1;
+ if((a.level==2||a.level==5) && a.floors[a.level].steps>=cfg.mine_steps)ctx.ready=1;
+}
+
+/* [122] r_mines_light_rock (BUILD): A diamond sword kills Sewer lizards and kobolds in one strike at strength 3; an iron one needs two, and each lizard bites first. */
+rule r_mines_light_rock [build] {
+ /* A diamond sword kills Sewer lizards and kobolds in one strike at strength
+  * 3; an iron one needs two, and each lizard bites first. Agents leaving the
+  * mines with iron swords passed the Sewers 0.66 of the time, with diamond
+  * ones 0.91. Most timed-out descents held one diamond, with three more left
+  * in rock that no torch had lit. Light unseen rock before the timed descent,
+  * keeping torches for the Troll Mines. */
+ if(a.level==2 && o.clear && (o.inv[I_SWORD]<4 || wm_armour()<(shallow()?8:6)) && o.inv[I_PICK]>=3 && o.inv[0]>=1 &&
+    o.inv[I_TORCH]>(shallow()?2:6) && a.floors[a.level].steps<(shallow()?7000:5*cfg.mine_steps))try light_unseen(20,1500) as LIGHT;
+}
+
+/* [123] r_mines_dark_probe (BUILD): With the open cave lit, look inside the rock for a diamond sword, or for iron while the iron armour is incomplete. */
+rule r_mines_dark_probe [build] {
+ /* With the open cave lit, look inside the rock for a diamond sword, or
+  * for iron while the iron armour is incomplete. */
+ if(shallow() && a.level==2 && o.clear && (o.inv[I_SWORD]<4 || wm_armour()<8) && o.inv[I_PICK]>=3 &&
+    o.inv[0]>=1 && o.inv[I_TORCH]>2 && a.floors[a.level].steps<7000)try dark_probe(25,400) as LIGHT;
+}
+
+/* [124] r_fire_gem_trip (BUILD): Fire phase, cleared Troll Mines: prospect (plate, diamonds, sapphires, torches, light unseen rock) within the gem-trip budget; ends the gem trip when nothing is left. */
+rule r_fire_gem_trip [build] {
+ int act=-1;
+ /* A Fire visit lasts as long as the drink, energy and health carried
+  * down. Top them up beside the Troll Mines water before each descent. */
+/* Prospecting. Full diamond armour at Troll Mines entry raised P(8) .23 ->
+  * .53 (troll stream oracle) and +3 diamonds at Fire arrival +7.5pp. Fire
+  * entrants hold 1.2 diamonds and armour 4.7 while the Troll Mines keep ~5.4
+  * diamonds and ~6.4 sapphires unseen in the dark (0.45 and 1.35 known; ~2
+  * of each within 40 steps of the down ladder). About one rock cell in a
+  * hundred is a diamond, another a sapphire: a torch on new rock reveals ~0.3
+  * of each. On the cleared mines, healthy and supplied, turn three diamonds
+  * into a plate, mine known diamonds and sapphires (to four, the ice pieces),
+  * keep 20 torches from the coal and Fire wood carried (dark Ice needs them),
+  * and light unseen rock (bounded budget). */
+ if(ctx.fire && a.level==5 && o.clear && (wm_armour()<8 || o.inv[I_SAPPHIRE]<4) && o.inv[I_PICK]>=3 && a.fire_dia<3500 &&
+    o.health>=8+o.str-1.01f && o.drink>=5 && o.food>=4 && o.energy>=4 && !wm_melee_within(6)) {
+  int sk=CRAFT;act=-1;
+  if(o.inv[I_DIAMOND]>=3 && wm_armour()<8)act=craft_radius(DIAMOND_ARMOUR,250);
+  if(act<0){sk=GATHER;if(wm_armour()<8)act=seek_block(DIAMOND,100);}
+  if(act<0 && o.inv[I_SAPPHIRE]<4 && o.inv[I_PICK]>=4)act=seek_block(SAPPHIRE,100);
+  if(act<0){sk=CRAFT;if(o.inv[I_TORCH]<20 && o.inv[I_COAL]>=1 && o.inv[I_WOOD]>=1)act=craft_radius(MAKE_TORCH,250);}
+  if(act<0){sk=LIGHT;if(o.inv[I_TORCH]>8)act=light_unseen(20,600);}
+  if(act>=0){a.fire_dia++;emit act as sk;}
+  /* Nothing left to light or mine within reach: the gem trip is over. */
+  if(ctx.prep==1)ctx.prep=a.fire_prep=2;
+ }
+}
+
+/* [125] r_descent_provision (SUPPLY): Fire phase, cleared Troll Mines, ready: top up drink, energy/health and (before Ice) food before the descent. */
+rule r_descent_provision [supply] {
+ if(ctx.fire && a.level==5 && o.clear && ctx.ready && !a.resupplying) {
+  /* Margins: drink and energy also fall on the walk back to the ladder,
+   * and a full-drink rule made agents with water 20 steps away shuttle
+   * between the two forever (ep 16). The drinking flag fills to the top. */
+  if(o.drink<=7+2*o.dex-3){a.drinking=1;try seek_water() as DRINK;}
+  if(o.energy<6 || o.health<8+o.str-1.01f){a.recovering=1;try recover() as RECOVER;}
+  /* The last descent goes straight to Ice, which has no food. */
+  if(ctx.prep==2 && o.food<=5)try hunt(2,20) as EAT;
+ }
+}
+
+/* [126] r_supply_visit_fill (SUPPLY): A supply visit from the mines leaves full: the next floor-5 stint has no reliable food. */
+rule r_supply_visit_fill [supply] {
+ /* A supply visit from the mines leaves full: the next floor-5 stint has no
+  * reliable food. Floors 3 and 4 are lit, so their animals are visible. */
+ if(TB2 && troll_phase() && (a.level==3 || a.level==4) && a.t-a.floors[a.level].entered<400 && o.health>3) {
+  if(o.drink<7+2*o.dex-2){a.drinking=1;try seek_water() as DRINK;}
+  if(o.food<7+2*o.dex-2)try hunt(2,30) as EAT;
+  if(o.food<=4)try explore() as EXPLORE;
+ }
+}
+
+/* [127] r_shallow_ow_provision (SUPPLY): Once the check passes, walk to the ladder without re-checking: drink, food and energy all fall on the way, and re-checking them kept one agent cycling between water, cows, sleep and the ladder for 18,000 steps. */
+rule r_shallow_ow_provision [supply] {
+ /* Shallow: leave the Overworld fed, watered and rested; a Dungeon or Mines
+  * visit ends when the first of the three runs low. The Dungeon sends agents
+  * up at energy 5 and awake energy falls a point per 31 steps, so descents at
+  * 7-8 gave Dungeon visits of 30-100 steps: arrive1 ep 101 made 60 round trips
+  * and spent 17,000 steps on the Overworld without finding the exit. Sleep
+  * last (a point per 11 steps, waking at full energy), then go. */
+/* Once the check passes, walk to the ladder without re-checking: drink,
+  * food and energy all fall on the way, and re-checking them kept one agent
+  * cycling between water, cows, sleep and the ladder for 18,000 steps. */
+ if(shallow() && a.level==0 && a.floors[1].seen && o.clear && ctx.ready && !a.resupplying &&
+    !(a.shallow_go && a.t-a.shallow_go<200)) {
+  if(o.drink<=6){a.drinking=1;try seek_water() as DRINK;}
+  if(o.food<=5){try forage() as EAT;try hunt(2,40) as EAT;try explore() as EAT;}
+  if(o.energy<=7){a.recovering=1;try recover() as RECOVER;}
+  a.shallow_go=a.t+1;
+ }
+}
+
+/* [128] r_descend_ready (NAV): Cleared, ready, not resupplying, healthy: travel down. */
+rule r_descend_ready [nav] {
+ if(a.level<8 && o.clear && ctx.ready && !a.resupplying && o.health>cfg.retreat_health && !(ctx.prep==1 && a.level==5)) {
+  if(nav_descent_blocked()) {
+   /* Heal here when the supplies allow it (the recovery rule's own entry). */
+   if(o.food>2 && o.drink>2){a.recovering=1;try recover() as RECOVER;}
+   pass;
+  }
+  try travel(1) as TRAVEL;
+ }
+}
+
+/* [129] r_starving_climb2 (SUPPLY): Food or drink at zero below the Overworld: climb. */
+rule r_starving_climb2 [supply] {
+ if(a.level>0 && a.level<8 && (o.food==0 || o.drink==0))try travel(0) as TRAVEL;
+}
+
+/* [130] r_mines_exit_light (NAV): A cleared mine only needs its ladder. */
+rule r_mines_exit_light [nav] {
+ /* A cleared mine only needs its ladder. When ordinary exploration has not
+  * found it in the time that 95% of descents need, search the small unlit
+  * pockets. Searching them earlier spent every torch near the entrance and
+  * left the rest of the floor dark for good. */
+ if(a.level==2 && o.clear && a.floors[a.level].down<0 && a.floors[a.level].steps>=4000)try light_unseen(8,600) as LIGHT;
+}
+
+/* [131] r_mines_exit_light1 (NAV): The ladder can sit on one unlit cell inside a fully explored cave: in 251 of 13,724 Mines entries (bank D) the agent shuttled between floors 1 and 2 for 100,000 steps; at arrive2 ep 63 and 192 the down-ladder cell was th */
+rule r_mines_exit_light1 [nav] {
+ /* The ladder can sit on one unlit cell inside a fully explored cave: in
+  * 251 of 13,724 Mines entries (bank D) the agent shuttled between floors 1
+  * and 2 for 100,000 steps; at arrive2 ep 63 and 192 the down-ladder cell was
+  * the only unknown cell among known path neighbours. No placement lit eight
+  * unseen cells any more. Light single unknown cells, farther away too. */
+ if(a.level==2 && !a.floors[5].seen && o.clear && a.floors[a.level].down<0 && a.floors[a.level].steps>=3000)try light_unseen(1,2500) as LIGHT;
+}
+
+/* [132] r_mines_exit_probe (NAV): The exit may lie beyond rock: probe it once every lit pocket is seen. */
+rule r_mines_exit_probe [nav] {
+ /* The exit may lie beyond rock: probe it once every lit pocket is seen. */
+ if(shallow() && a.level==2 && o.clear && a.floors[a.level].down<0 && a.floors[a.level].steps>=3000)try dark_probe(10,2500) as LIGHT;
+}
+
+/* [133] r_fire_ladder_camp (COMBAT): Clear Fire from its up ladder. */
+rule r_fire_ladder_camp [combat] {
+ /* Clear Fire from its up ladder. Pigmen within ten cells come to us, and
+  * clearance hunts 15-35 cells out ended in 4-6 hits taken on the run back
+  * (25 traced deaths of fully fire-enchanted agents). On the ladder cell a
+  * low fight ends with one ascend (see above). Where nothing approaches
+  * (a ladder in a lava or rock pocket), fall back to hunting after 80 steps. */
+ if(ctx.fire && a.level==6 && !o.clear && a.floors[6].up>=0 && path_dist(a.floors[6].up)<INF) {
+  int near=0,up=a.floors[6].up;
+  for(int i=0;i<a.enemy_count;i++){if(!(a.enemies[i]).kind && abs((a.enemies[i]).p/SIDE-a.r)+abs((a.enemies[i]).p%SIDE-a.c)<10)near=1;}
+  if(near)a.fire_camp=0;else a.fire_camp++;
+  if(a.fire_camp<80) {
+   if(up!=cell(a.r,a.c))try move_path(up) as FIGHT;
+   emit NOOP as FIGHT;
+  }
+ }
+}
+
+/* [134] r_hunt_food (SUPPLY): On Fire a bat hunt detours into pigman reach (ep 1): hunt there only when food is needed, or for a bat close by. */
+rule r_hunt_food [supply] {
+ /* On Fire a bat hunt detours into pigman reach (ep 1): hunt there only
+  * when food is needed, or for a bat close by. */
+ int bats=ctx.fire && a.level==6?(o.food<=6?15:4):15;
+ if(bats && o.food<7+2*o.dex && o.inv[I_SWORD]>=2)try hunt(2,bats) as EAT;
+}
+
+/* [135] r_ice_light_clear (NAV): Ice is pitch dark (default light 0): only torch-lit cells are ever observed and moves are planned onto known cells only, so torches are the exploration itself. */
+rule r_ice_light_clear [nav] {
+ /* Ice is pitch dark (default light 0): only torch-lit cells are ever
+  * observed and moves are planned onto known cells only, so torches are
+  * the exploration itself. Frontier walking with a torch whenever ten new
+  * cells would light spent 24-94 torches per exit found, one every ~30 Ice
+  * steps, and Ice time is lethal at a near-constant rate. Walk to the
+  * reachable placement that lights the most unseen cells instead. Before
+  * clearance the same rule runs below, after hunts within 30 steps: placed
+  * here it pre-empted them and clearance fell .569 -> .533. */
+ if(a.level==7 && o.clear && a.floors[7].down<0 && o.inv[I_TORCH])try light_unseen(ICE_TORCH_GAIN,1200) as LIGHT;
+}
+
+/* [136] r_fire_rubies (BUILD): Fire rock is 2.5% ruby; a known Vault table turns each into one fewer point of fire damage per blow and fireball. */
+rule r_fire_rubies [build] {
+ /* Once an elemental realm is clear, uncover its exit. Extra hunts spend
+  * the food and health needed to reach the next floor. */
+/* Fire rock is 2.5% ruby; a known Vault table turns each into one fewer
+  * point of fire damage per blow and fireball. Mine those close by. */
+ if(ctx.fire && a.level==6 && wm_armour() && o.inv[I_PICK]>=4 && vault_trip_ok()) {
+  int fp=0;for(int i=0;i<4;i++)fp+=o.armour_enchant[i]==1;
+  if(o.inv[I_RUBY]<4-fp)try seek_block(RUBY,10) as GATHER;
+ }
+}
+
+/* [137] r_realm_explore_clear (NAV): Cleared Fire/Ice: explore for the exit. */
+rule r_realm_explore_clear [nav] {
+ if((a.level==6 || a.level==7) && o.clear)try explore() as EXPLORE;
+}
+
+/* [138] r_hunt_prey (COMBAT): Fire elementals keep four or five cells away and walk on lava; chased, they end cornered and fire point-blank. */
+rule r_hunt_prey [combat] {
+ /* A cleared Dungeon only needs its ladder. Distant hunts there kept agents
+  * fighting near the entrance for hundreds of steps instead of exploring;
+  * approaching mobs still meet the adjacent-combat rules. */
+/* Fire elementals keep four or five cells away and walk on lava; chased,
+  * they end cornered and fire point-blank. 74 of 87 sampled fireball hits
+  * came from one or two cells. Clear Fire on the pigmen that come to us. */
+ try bm_snipe(0) as FIGHT;
+ int prey=ctx.fire && a.level==6?1:5;
+ /* Troll Mines: deep things come only to a pool's edge, and walking up to
+  * strike one took 3.1 slimeball hits per 1,000 steps (the highest rate of any
+  * activity). Trolls come to us; on the cleared floor hunts only cost time. */
+ if(TB11 && a.level==5 && troll_phase())prey=o.clear?0:1;
+ if(prey && o.inv[I_SWORD]>=2 && (a.level>0 || !a.achieved[8] || !a.achieved[12]))try hunt(prey,a.level==1 && o.clear?3:30) as FIGHT;
+}
+
+/* [139] r_ripe_plant (SUPPLY): Overworld: eat a ripe plant (achievement). */
+rule r_ripe_plant [supply] {
+ if(a.level==0 && !a.achieved[11])try seek_block(RIPE,70) as EAT;
+}
+
+/* [140] r_ice_light (NAV): Ice: light the reachable placement that shows the most unseen cells. */
+rule r_ice_light [nav] {
+ if(a.level==7 && a.floors[7].down<0 && o.inv[I_TORCH])try light_unseen(ICE_TORCH_GAIN,1200) as LIGHT;
+}
+
+/* [141] r_dungeon_frontier (NAV): The general explorer scores only cells within 60 steps, and with those all seen it wanders among known rooms: one Dungeon run covered the same ~380 cells for 16,000 steps without finding the exit (arrive1 ep 3). */
+rule r_dungeon_frontier [nav] {
+ /* The general explorer scores only cells within 60 steps, and with those
+  * all seen it wanders among known rooms: one Dungeon run covered the same
+  * ~380 cells for 16,000 steps without finding the exit (arrive1 ep 3).
+  * Walk to stands that still show unseen cells, at any distance (the Fire
+  * stream's frontier walker). */
+ if(shallow() && a.level==1 && a.floors[1].down<0)try frontier_walk() as EXPLORE;
+}
+
+/* [142] r_troll_explore (NAV): Default exploration (troll_explore). */
+rule r_troll_explore [nav] {
+ try troll_explore() as EXPLORE;
+}
+
+/* [143] r_idle (CORE): Fallback: no-op. */
+rule r_idle [core] {
+ emit NOOP as EXPLORE;
+}

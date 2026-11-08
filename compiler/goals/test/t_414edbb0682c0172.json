@@ -1,0 +1,18 @@
+{
+  "name": "t_414edbb0682c0172",
+  "sequence": [
+    {
+      "acquire": {
+        "wood": 7,
+        "stone": 2
+      },
+      "maintain": {
+        "wood": 3,
+        "stone": 1
+      }
+    },
+    {
+      "reach": 1
+    }
+  ]
+}

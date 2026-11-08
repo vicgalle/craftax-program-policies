@@ -1,0 +1,33 @@
+{
+  "name": "t_b58f23757b82a3e2",
+  "sequence": [
+    {
+      "reach": 3
+    },
+    {
+      "reach": 2
+    },
+    {
+      "acquire": {
+        "coal": 6,
+        "iron": 2
+      },
+      "maintain": {
+        "coal": 3,
+        "iron": 1
+      }
+    },
+    {
+      "reach": 0
+    },
+    {
+      "reach": 1
+    },
+    {
+      "reach": 2
+    },
+    {
+      "reach": 0
+    }
+  ]
+}

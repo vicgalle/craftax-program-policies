@@ -1,0 +1,905 @@
+{
+ "natives": [
+  {
+   "name": "fire_hit",
+   "ret": "float",
+   "params": []
+  },
+  {
+   "name": "wm_shot_count",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "wm_shot_cell",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "wm_shot_heading",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "wm_shot_code",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "wm_projectile_damage",
+   "ret": "float",
+   "params": [
+    "i",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "wm_melee_threat_at",
+   "ret": "float",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "wm_slimeball_damage",
+   "ret": "float",
+   "params": []
+  },
+  {
+   "name": "wm_melee_incoming",
+   "ret": "float",
+   "params": []
+  },
+  {
+   "name": "wm_hit_damage",
+   "ret": "float",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "wm_risk",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "wm_greedy_next",
+   "ret": "int",
+   "params": [
+    "i",
+    "i",
+    "i",
+    "out",
+    "out"
+   ]
+  },
+  {
+   "name": "melee_at",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "ranged_at",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "enemy_health_at",
+   "ret": "float",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "wm_greedy_approach_i",
+   "ret": "int",
+   "params": [
+    "i",
+    "i",
+    "out",
+    "out"
+   ]
+  },
+  {
+   "name": "tx_dies_at_least",
+   "ret": "int",
+   "params": [
+    "i",
+    "i",
+    "i",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "tx_evaluate",
+   "ret": "float",
+   "params": [
+    "i",
+    "i",
+    "i",
+    "i",
+    "i",
+    "i",
+    "out",
+    "out"
+   ]
+  },
+  {
+   "name": "tx_mob_shot",
+   "ret": "float",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "tx_ranged_code",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "cell",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "inside",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "block",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "walkable",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "solid",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "mineable",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "known_direction",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "place_valid",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "near",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "mob_at",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "arrow_at",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "known_trees",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "fire_table_known",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "abs",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "imin",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "fmaxf",
+   "ret": "float",
+   "params": [
+    "f",
+    "f"
+   ]
+  },
+  {
+   "name": "fminf",
+   "ret": "float",
+   "params": [
+    "f",
+    "f"
+   ]
+  },
+  {
+   "name": "wm_armour",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "wm_attack_damage",
+   "ret": "float",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "wm_attribute_damage",
+   "ret": "void",
+   "params": []
+  },
+  {
+   "name": "wm_firing_line",
+   "ret": "int",
+   "params": [
+    "i",
+    "i",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "wm_hostile_within",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "wm_incoming_damage",
+   "ret": "float",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "wm_melee_within",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "paths_begin",
+   "ret": "void",
+   "params": []
+  },
+  {
+   "name": "path_dist",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "path_near",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "seek",
+   "ret": "int",
+   "params": [
+    "mask",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "seek_block",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "place",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "move_path",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "hunt",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "paths_within",
+   "ret": "void",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "paths_to",
+   "ret": "void",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "paths_all",
+   "ret": "void",
+   "params": []
+  },
+  {
+   "name": "path_dist_within",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "dist_at",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "first_at",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "prefix_at",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "water_distances_at",
+   "ret": "void",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "unseen_gain",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "travel",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "explore",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "frontier_walk",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "light_unseen",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "light_behind",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "dark_probe",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "craft_radius",
+   "ret": "int",
+   "params": [
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "harvest_walkable",
+   "ret": "int",
+   "params": [
+    "i",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "known_count",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "nav_floor_hit",
+   "ret": "float",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "forage",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "recover",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "sealed_in",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "chamber_walls",
+   "ret": "int",
+   "params": [
+    "i",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "wall_position",
+   "ret": "void",
+   "params": [
+    "i",
+    "i",
+    "i",
+    "out",
+    "out",
+    "out"
+   ]
+  },
+  {
+   "name": "water_cost",
+   "ret": "int",
+   "params": []
+  },
+  {
+   "name": "rm_plan_cost",
+   "ret": "int",
+   "params": [
+    "i",
+    "out"
+   ]
+  },
+  {
+   "name": "rm_plan_food",
+   "ret": "int",
+   "params": [
+    "out"
+   ]
+  },
+  {
+   "name": "rm_time_to_empty",
+   "ret": "int",
+   "params": [
+    "i"
+   ]
+  },
+  {
+   "name": "prefix_put",
+   "ret": "void",
+   "params": [
+    "i",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "fire_bounds_at",
+   "ret": "void",
+   "params": [
+    "i",
+    "out",
+    "out",
+    "out",
+    "out"
+   ]
+  },
+  {
+   "name": "wm_hit_damage_str",
+   "ret": "float",
+   "params": [
+    "i",
+    "i",
+    "i"
+   ]
+  },
+  {
+   "name": "ceilf",
+   "ret": "float",
+   "params": [
+    "f"
+   ]
+  }
+ ],
+ "consts": {
+  "SIDE": 96,
+  "CELLS": 9216,
+  "LEVELS": 9,
+  "VIEW": 99,
+  "SCALARS": 51,
+  "INVALID": 0,
+  "BOUNDARY": 1,
+  "GRASS": 2,
+  "WATER": 3,
+  "STONE": 4,
+  "TREE": 5,
+  "WOOD": 6,
+  "PATH": 7,
+  "COAL": 8,
+  "IRON": 9,
+  "DIAMOND": 10,
+  "TABLE": 11,
+  "FURNACE": 12,
+  "SAND": 13,
+  "LAVA": 14,
+  "PLANT": 15,
+  "RIPE": 16,
+  "WALL": 17,
+  "DARKNESS": 18,
+  "MOSS": 19,
+  "STALAGMITE": 20,
+  "SAPPHIRE": 21,
+  "RUBY": 22,
+  "CHEST": 23,
+  "FOUNTAIN": 24,
+  "FIRE_GRASS": 25,
+  "ICE_GRASS": 26,
+  "GRAVEL": 27,
+  "FIRE_TREE": 28,
+  "ICE_SHRUB": 29,
+  "FIRE_TABLE": 30,
+  "ICE_TABLE": 31,
+  "BOSS": 32,
+  "GRAVE": 33,
+  "GRAVE2": 34,
+  "GRAVE3": 35,
+  "VULNERABLE": 36,
+  "NOOP": 0,
+  "LEFT": 1,
+  "RIGHT": 2,
+  "UP": 3,
+  "DOWN": 4,
+  "DO": 5,
+  "SLEEP": 6,
+  "PLACE_STONE": 7,
+  "PLACE_TABLE": 8,
+  "PLACE_FURNACE": 9,
+  "PLACE_PLANT": 10,
+  "WOOD_PICK": 11,
+  "STONE_PICK": 12,
+  "IRON_PICK": 13,
+  "WOOD_SWORD": 14,
+  "STONE_SWORD": 15,
+  "IRON_SWORD": 16,
+  "REST": 17,
+  "DESCEND": 18,
+  "ASCEND": 19,
+  "DIAMOND_PICK": 20,
+  "DIAMOND_SWORD": 21,
+  "IRON_ARMOUR": 22,
+  "DIAMOND_ARMOUR": 23,
+  "SHOOT": 24,
+  "MAKE_ARROW": 25,
+  "FIREBALL": 26,
+  "ICEBALL": 27,
+  "PLACE_TORCH": 28,
+  "POTION_RED": 29,
+  "POTION_GREEN": 30,
+  "POTION_BLUE": 31,
+  "POTION_PINK": 32,
+  "POTION_CYAN": 33,
+  "POTION_YELLOW": 34,
+  "READ_BOOK": 35,
+  "ENCHANT_SWORD": 36,
+  "ENCHANT_ARMOUR": 37,
+  "MAKE_TORCH": 38,
+  "LEVEL_DEX": 39,
+  "LEVEL_STR": 40,
+  "LEVEL_INT": 41,
+  "ENCHANT_BOW": 42,
+  "I_WOOD": 0,
+  "I_STONE": 1,
+  "I_COAL": 2,
+  "I_IRON": 3,
+  "I_DIAMOND": 4,
+  "I_SAPPHIRE": 5,
+  "I_RUBY": 6,
+  "I_SAPLING": 7,
+  "I_TORCH": 8,
+  "I_ARROW": 9,
+  "I_BOOK": 10,
+  "I_PICK": 11,
+  "I_SWORD": 12,
+  "INVENTORY": 13,
+  "EXPLORE": 0,
+  "GATHER": 1,
+  "CRAFT": 2,
+  "DRINK": 3,
+  "EAT": 4,
+  "RECOVER": 5,
+  "FIGHT": 6,
+  "FARM": 7,
+  "LIGHT": 8,
+  "TRAVEL": 9,
+  "LOOT": 10,
+  "MAGIC": 11,
+  "UPGRADE": 12,
+  "SKILL_COUNT": 13,
+  "GOAL_INVENTORY": 0,
+  "GOAL_EQUIPMENT": 1,
+  "GOAL_ADJACENT": 2,
+  "GOAL_FLOOR": 3,
+  "GOAL_RECOVERY": 4,
+  "GOAL_PREPARE": 5,
+  "EQ": 0,
+  "RANGE": 1,
+  "AT_LEAST": 2,
+  "E_PICK": 0,
+  "E_SWORD": 1,
+  "E_HELMET": 2,
+  "E_CHEST": 3,
+  "E_PANTS": 4,
+  "E_BOOTS": 5,
+  "MAX_GOALS": 8,
+  "COMMAND_VERSION": 1,
+  "MOD_CORE": 0,
+  "MOD_NAV": 1,
+  "MOD_SUPPLY": 2,
+  "MOD_COMBAT": 3,
+  "MOD_BUILD": 4,
+  "MOD_COUNT": 5,
+  "CMD_IDLE": 0,
+  "CMD_ACTIVE": 1,
+  "CMD_INTERRUPTED": 2,
+  "CMD_COMPLETE": 3,
+  "CMD_BLOCKED": 4,
+  "RG_EXPEDITION": 1,
+  "RG_EXCURSION": 2,
+  "RO_COMPLETED": 1,
+  "RO_ABANDONED": 2,
+  "RO_DIED": 3,
+  "RO_HORIZON": 4,
+  "RO_STOPPED": 5,
+  "RO_INTERRUPTED": 6,
+  "SG_NONE": 0,
+  "SG_ARMOUR": 1,
+  "SG_WEAPON": 2,
+  "SG_PROSPECT": 3,
+  "SG_ARMOUR2": 4,
+  "SG_WEAPON2": 5,
+  "SG_PROSPECT2": 6,
+  "SG_ENCHANT": 7,
+  "SG_GEMS": 8,
+  "SG_SPELLS": 9,
+  "SG_POTIONS": 10,
+  "SG_ATTRIBUTES": 11,
+  "SG_STOCK": 12,
+  "SG_LIGHT": 13,
+  "SG_X1": 14,
+  "SG_X2": 15,
+  "SG_KINDS": 16,
+  "SG_DEPTH": 3,
+  "ROUTE_RING": 11,
+  "HEAP": 6144,
+  "UNKNOWN": 255,
+  "INF": 1061109567
+ },
+ "tables": [
+  {
+   "name": "dr",
+   "size": 5
+  },
+  {
+   "name": "dc",
+   "size": 5
+  }
+ ],
+ "queries": [
+  {
+   "name": "path_through",
+   "default": 0
+  },
+  {
+   "name": "wm_early",
+   "default": 0
+  },
+  {
+   "name": "wm_shooter_guard",
+   "default": 0
+  },
+  {
+   "name": "wm_fire_line",
+   "default": 0
+  },
+  {
+   "name": "wm_slime_attrib",
+   "default": 0
+  },
+  {
+   "name": "wm_arrival_guard",
+   "default": 0
+  },
+  {
+   "name": "wm_potion_restore",
+   "default": 0
+  },
+  {
+   "name": "explore_fire_search",
+   "default": 0
+  },
+  {
+   "name": "explore_prefer_near",
+   "default": 0
+  },
+  {
+   "name": "fire_search_budget",
+   "default": 0
+  },
+  {
+   "name": "fire_search_refill",
+   "default": 0
+  },
+  {
+   "name": "enchant_trip",
+   "default": 0
+  },
+  {
+   "name": "shelter_tables",
+   "default": 1
+  },
+  {
+   "name": "shelter_pond",
+   "default": 0
+  },
+  {
+   "name": "shelter_base",
+   "default": -1
+  },
+  {
+   "name": "shelter_base_reach",
+   "default": 0
+  },
+  {
+   "name": "shelter_kd",
+   "default": 1
+  },
+  {
+   "name": "shelter_kn",
+   "default": 50
+  },
+  {
+   "name": "shelter_kr",
+   "default": 40
+  },
+  {
+   "name": "shelter_kw",
+   "default": 25
+  },
+  {
+   "name": "shelter_wnear",
+   "default": 0
+  },
+  {
+   "name": "shelter_wpen",
+   "default": 0
+  },
+  {
+   "name": "shelter_bonus_cell",
+   "default": -1
+  },
+  {
+   "name": "shelter_bonus",
+   "default": 0
+  }
+ ]
+}

@@ -1,0 +1,64 @@
+# I's machine interface (integrator). Natives are C functions of the interpreter;
+# their environment arguments (agent, observation, config, scratch) are supplied
+# by the interpreter, the rest by the program. `name = c_function` exports under
+# another name; `const NAME` exports a constant of full_policy.cpp; `table NAME N`
+# a constant int table.
+#
+# Map geometry and views
+cell
+inside
+block
+walkable
+solid
+mineable
+known_direction
+place_valid
+near
+mob_at
+arrow_at
+known_trees
+fire_table_known
+# Arithmetic
+abs = tr_abs
+imin
+fmaxf = tr_fmaxf
+fminf = tr_fminf
+# World model queries
+wm_armour
+wm_attack_damage
+wm_attribute_damage
+wm_firing_line
+wm_hostile_within
+wm_incoming_damage
+wm_melee_within
+# Search and movement
+paths_begin
+path_dist
+path_near
+seek
+seek_block
+place
+move_path
+hunt
+const UNKNOWN
+const INF
+table dr 5
+table dc 5
+# Search state and scratch views (tr_machine.inc)
+paths_within
+paths_to
+paths_all
+path_dist_within
+dist_at
+first_at
+prefix_at
+water_distances_at
+unseen_gain
+# Queries: the machine's calls into the program (`def int NAME()`), with their default
+query path_through 0
+query wm_early 0
+query wm_shooter_guard 0
+query wm_fire_line 0
+query wm_slime_attrib 0
+query wm_arrival_guard 0
+query wm_potion_restore 0

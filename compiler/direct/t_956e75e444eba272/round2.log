@@ -1,0 +1,30 @@
+{"prepared": "direct_t_956e75e444eba272_c2", "programs": 1, "distinct_images": 1}
+{"goal": "t_956e75e444eba272", "arm": "synthesized", "program": "generated/direct_t_956e75e444eba272_c2/t_956e75e444eba272_synthesized", "program_image_sha256": "99b669396017ca75b176d314bcbdcc8daddb8ac4007958a92a4f58d598db29c9", "plan_sha256": "cebf06699eb4f59aed385dc534f36652450a38497e9cee3928251dc7efccc075", "goal_sha256": "e5bcb7d3ec64ce242149753a9f2ed93bee8241b0acdcfda43f1e861f6e5efedc", "evaluator_sha256": "5a92edba9bdfb953e61d6af975246d4f5cac422ef05a44b866b33923b35c75dc", "monitor_sha256": "8bffbf6523ea8cec9dbeb7efeac4eff8964859792d5f4c05c70e293a7dacd0b7", "run_source_sha256": "94ef090477689969a46078a9b387ddac25430c5655147f25390db63f9c8a4c86", "rows_sha256": "6dd63080d66e3e9e0afc07deea51d432f0db5353d529299b5275c93d614a337e", "binary_sha256": "a93496862a6320dbbef2317e64ba0c989930fc30f10af49d756e10234f6e7bc4", "mode": "spec", "seed": 2030000000, "horizon": 50000, "seconds": 3.659078458997101, "episodes": 8, "successes": 6, "success_rate": 0.75, "violations": 0, "timeouts": 0, "deaths": 2, "mean_progress": 0.8333333333333334, "failure_penalized_steps": 19631.375}
+{
+  "mode": "direct",
+  "run": null,
+  "candidate": 2,
+  "label": "direct_t_956e75e444eba272_c2",
+  "seed": 2030000000,
+  "episodes_per_goal": 8,
+  "horizon": 50000,
+  "authored_source": "direct/t_956e75e444eba272/candidate2.py",
+  "archived_source": "direct/t_956e75e444eba272/round_2/source.py",
+  "source_sha256": "3fb4d76a7b5f6f5ec3b03005c74b79b2b36de89e0bba18550ad6508908c01e87",
+  "audit": {
+    "controller_path": "direct/t_956e75e444eba272/candidate2.py",
+    "sha256": "3fb4d76a7b5f6f5ec3b03005c74b79b2b36de89e0bba18550ad6508908c01e87",
+    "checked_goal_structures": 1,
+    "note": "Static/interface checks plus separate manual review; not a semantic proof."
+  },
+  "tasks": {
+    "goals/test/t_956e75e444eba272.json": "0b5e4227bc1237968b0835a8e89d6772437f62f2b80aa72f5baee8cc7d1f571b"
+  },
+  "total_episodes": 8,
+  "successes": 6,
+  "failure_penalized_steps": 19631.375,
+  "actual_steps": 115383,
+  "evaluation_seconds": 3.659078458997101,
+  "preflight_seconds": 34.57753604100071,
+  "wall_seconds": 38.35385666699949
+}

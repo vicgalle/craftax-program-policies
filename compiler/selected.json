@@ -1,0 +1,91 @@
+{
+  "direct": {
+    "t_0d0c67fddf739526": {
+      "controller_path": "direct/t_0d0c67fddf739526/selected.py",
+      "selected_candidate": 3,
+      "sha256": "a47864c1f1b285617257bc8528396bb39fe8bc44ee18e6c46cc36d0a819f20f3"
+    },
+    "t_1f902810274e5ceb": {
+      "controller_path": "direct/t_1f902810274e5ceb/selected.py",
+      "selected_candidate": 3,
+      "sha256": "1f1228b781c401367be54513543c4ce3b02be8495c98b34076611f86d9d9cb36"
+    },
+    "t_2ffa2c7476f464b6": {
+      "controller_path": "direct/t_2ffa2c7476f464b6/selected.py",
+      "selected_candidate": 2,
+      "sha256": "ee22f520918d795f7740e03d57bf505c789dd15458646128ba84fb737fdbe4e5"
+    },
+    "t_414edbb0682c0172": {
+      "controller_path": "direct/t_414edbb0682c0172/selected.py",
+      "selected_candidate": 3,
+      "sha256": "a6f6f9e8338d0a96017b9b7518c57c933062dfeeaa0c158c01f7535658fe1e2e"
+    },
+    "t_5bc2d47fb0a07d58": {
+      "controller_path": "direct/t_5bc2d47fb0a07d58/selected.py",
+      "selected_candidate": 3,
+      "sha256": "72829a6b62660b0dea31a6e85d09d9ab9c2d21d580c4e41bd6243b48b2bc768c"
+    },
+    "t_63af4ce4a2c84ff1": {
+      "controller_path": "direct/t_63af4ce4a2c84ff1/selected.py",
+      "selected_candidate": 3,
+      "sha256": "cec0b3280498ea4edde32ff07ac036560df17e402cce1d70213d233e88228956"
+    },
+    "t_8a1370d7e160a5e2": {
+      "controller_path": "direct/t_8a1370d7e160a5e2/selected.py",
+      "selected_candidate": 2,
+      "sha256": "ab61bb58f27a208fbcaed92ae71ead1a9ed1007e05fbccee168f1c4b06e5eb12"
+    },
+    "t_956e75e444eba272": {
+      "controller_path": "direct/t_956e75e444eba272/selected.py",
+      "selected_candidate": 1,
+      "sha256": "728cd631e28b74c072f94ed26a4e6e6f1bc7e513b12d3f3403359d3678ea1fcf"
+    },
+    "t_c0a968ce34d45ca2": {
+      "controller_path": "direct/t_c0a968ce34d45ca2/selected.py",
+      "selected_candidate": 2,
+      "sha256": "769c5061cd0162487a49caef23bfaef67269a52f65bba60a9f4c563e63db40db"
+    },
+    "t_c132199c08c2bea4": {
+      "controller_path": "direct/t_c132199c08c2bea4/selected.py",
+      "selected_candidate": 3,
+      "sha256": "b829b5932571d7c1c6fb6207c57bf7a39376ee6af144a318712ab2a42a44cd30"
+    },
+    "t_c79a8afb3df9946f": {
+      "controller_path": "direct/t_c79a8afb3df9946f/selected.py",
+      "selected_candidate": 3,
+      "sha256": "f2a50d002e3fed89b2c0255dd991a3d2c16a5484536006021ec61124af1eff57"
+    },
+    "t_daf2852fbebe9c69": {
+      "controller_path": "direct/t_daf2852fbebe9c69/selected.py",
+      "selected_candidate": 3,
+      "sha256": "b6ac7ab73964558fa6080a5a21463076580424f8494d95af01aa5d3293efd602"
+    }
+  },
+  "shared": {
+    "shared_run_1": {
+      "controller_path": "synthesis/run_1/selected.py",
+      "selected_candidate": 3,
+      "sha256": "7de55c25d6fc032173ed2f6a0e416bb0c2b964a96a8854b49589484453c420b8"
+    },
+    "shared_run_2": {
+      "controller_path": "synthesis/run_2/selected.py",
+      "selected_candidate": 3,
+      "sha256": "638984083bce501a00aa36c388b833f65c6ca7510010f984b8c898c67c136318"
+    },
+    "shared_run_3": {
+      "controller_path": "synthesis/run_3/selected.py",
+      "selected_candidate": 2,
+      "sha256": "b088294dcc7ab870412b94d948cc140a4da02804a07226a472246bb2f46c4327"
+    },
+    "shared_run_4": {
+      "controller_path": "synthesis/run_4/selected.py",
+      "selected_candidate": 2,
+      "sha256": "ba7fc829fac30949b7b48c5bb82955959561495d22517665271dcc2d043a7f63"
+    },
+    "shared_run_5": {
+      "controller_path": "synthesis/run_5/selected.py",
+      "selected_candidate": 2,
+      "sha256": "8577b646f854b369e01f3614b4cd40e5defe816938e18c73a21519e15b761220"
+    }
+  }
+}

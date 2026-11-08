@@ -1,0 +1,33 @@
+{
+  "goal": {
+    "name": "t_3e9e9b3692ff2804",
+    "sequence": [
+      {
+        "reach": 3
+      },
+      {
+        "reach": 2
+      },
+      {
+        "reach": 3
+      }
+    ]
+  },
+  "arm": "synthesized",
+  "compiler_sha256": "b6b07d44f33f7e1e0a48c6e62ca31df2a168710a21664f6422b27edc920fddb4",
+  "controller": "synthesis/run_3/round_3/source.py",
+  "controller_sha256": "74e913c190aec93ec91015f86c236f42f94e3a6be6a37db7f0dacdbb8b5575c3",
+  "snapshot_sha256": "b3c66554387dd0e804cab834746328459469d8077853eace6f50e3e6682c6700",
+  "sources": {
+    "floor8.tr": "f7ec597e8b117cb375feba8ff5cde3472b5e1fd1e4698bbcbb68e0840366ef37",
+    "combat.tr": "b1fd57de24eeb9346aa75a129afa944eb16210f2c4d6e9a5dc8435eea40f838c",
+    "controller.tr": "27d2dadda89dcf6399000c25a79f80a073829a921e50037787cfb7c0486ecd8d",
+    "filter.tr": "cf3e86eaac5eb3b50efa291bdb2ccc500389948405a7861e6aa1c97b217bb508",
+    "hooks.tr": "9f9b873b786a3c916f895b38d9ae57ee13ab3cfe2c470ae43ffe35f61a372730",
+    "params.tr": "ec8440dc765655fb8f53d0efb8bc0cfde588713687ef822e94f20f2316416c09",
+    "plan.tr": "85bc75eebcfe895db658581177971a967bdce5b280a5dea11f9b99ae14ea2bbe",
+    "sequence.tr": "30d176c6c1f507271954376a38e9e8fbe4d0be76d21a455a9df24dfc4a728b2e",
+    "supply.tr": "0cae950048d6a9756df5fd6dc6412f9e70c8763dea421eebc3623f2fba143a4e"
+  },
+  "order_sha256": "07d17739e883778da0c4be420af23ef4c952d1cb1f2e0d78b312919a141644b1"
+}

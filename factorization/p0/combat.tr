@@ -1,0 +1,629 @@
+// combat.tr: the combat strategy. Translated from the target's m_combat.inc
+// (tactical, cb_lowflee), full_response.inc (the unseen-attacker response),
+// full_boss_model.inc (the boss-floor choices) and full_tactics.inc (the
+// shield's override policy). The world model, the damage model, the boss
+// state tracker and the shield's rollout simulator stay in I as natives.
+
+// Strategy constants.
+const CB_LOWFLEE = 5;
+const BM_STALL = 2000;
+const BM_GAIN = 4;
+const BM_IDENTIFY = 1;
+const BM_SNIPE_EARLY = 1;
+
+/* ---- Necromancer floor (full_boss_model.inc) ---- */
+
+/* An empty, regenerating arena: the boss is vulnerable, no shot is in flight,
+ * and food, drink and energy are all above zero. */
+def int bm_safe_window() {
+ return o.level==8 && o.boss_vulnerable && wm_shot_count()==0 && o.food>0 && o.drink>0 && o.energy>0;
+}
+
+/* Preserve known healing during an empty, regenerating arena. */
+def int bm_healing_needed() {
+ if(o.level==8 && bm_safe_window())return 0;
+ return o.health<=6;
+}
+
+/* Identify duplicate unknown colours only while recovery is assured and
+ * the health deficit makes healing observable. A spare bottle then remains
+ * available for the later fight if the experiment discovers healing. */
+def int bm_prepare() {
+ if(!BM_IDENTIFY || !bm_safe_window() || o.energy<=3 || o.health<7 ||
+    o.health>=8+o.str-0.5f || wm_incoming_damage(NOOP)>0)return -1;
+ for(int i=0;i<6;i++)if(o.potions[i] && a.potion_effect[i]==0)return -1;
+ for(int i=0;i<6;i++)if(o.potions[i]>=(BM_IDENTIFY==1?2:1) && a.potion_effect[i]<0)
+  return POTION_RED+i;
+ return -1;
+}
+
+/* Search-repair option: after BM_STALL steps without exploration progress,
+ * light unseen cells until something new is seen. */
+def int bm_search() {
+ if(o.level!=8)return -1;
+ int since=a.bm_progress_t;
+ if(!a.bm_active && a.t-since<=BM_STALL)return -1;
+ a.bm_active=1;
+ return light_unseen(BM_GAIN,INF/2);
+}
+
+/* Wave-five child: route to a clear firing line rather than insisting on a
+ * sword stand beside a Deep Thing's grave. Visible targets only. */
+def int bm_snipe(int aligned_only) {
+ if(o.level!=8 || a.t-a.bm_progress_t<=2000 || o.boss_vulnerable || (aligned_only && !BM_SNIPE_EARLY) || a.shot_count>=3)return -1;
+ int best=-1,want=0,cast=-1,costbest=INF,here=cell(a.r,a.c);
+ for(int i=0;i<a.enemy_count;i++) {
+  if(!a.enemies[i].kind || a.enemies[i].type!=6)continue;
+  int ep=a.enemies[i].p;
+  int acts[3]={SHOOT,FIREBALL,ICEBALL},codes[3]={5,3,4},shot=-1;
+  float damage=0;
+  for(int j=0;j<3;j++) {
+   if(j==0?(!o.bow || !o.inv[I_ARROW]):(o.mana<2 || !o.spells[j-1]))continue;
+   float hit=wm_projectile_damage(codes[j],a.enemies[i].type,a.enemies[i].kind);
+   if(hit>damage){damage=hit;shot=acts[j];}
+  }
+  if(shot<0 || damage<a.enemies[i].health)continue;
+  for(int d=1;d<=4;d++)for(int k=1;k<=5;k++) {
+   int r=ep/SIDE-k*dr[d],c=ep%SIDE-k*dc[d];
+   if(!inside(r,c) || solid(block(r,c)) || block(r,c)==UNKNOWN)break;
+   int p=cell(r,c);if(k<2 || !walkable(block(r,c)) || (mob_at(p) && p!=here))continue;
+   if(aligned_only && (p!=here || o.dir!=d))continue;
+   int cost=p==here?0:path_dist(p);
+   cost+=o.dir==d && p==here?0:10;
+   if(cost<costbest){best=p;want=d;cast=shot;costbest=cost;a.target=ep;}
+  }
+ }
+ if(best<0 || costbest>=INF)return -1;
+ if(best==here) {
+  int action=o.dir==want?cast:want;
+  if(wm_incoming_damage(action)<o.health-2)return action;
+  return -1;
+ }
+ return move_path(best);
+}
+
+/* ---- Unseen-attacker response (full_response.inc) ----
+ * A response option owns a short interval after evidence of an unseen
+ * attacker. Its sensing, cover and movement children can be refined apart. */
+
+/* Unknown or water cells (2-5 cells out) along the four lines from (r,c):
+ * where an unseen shooter may stand. */
+def int rs_exposure(int r,int c) {
+ int count=0;
+ for(int d=1;d<=4;d++)for(int k=1;k<=5;k++) {
+  int rr=r+k*dr[d],cc=c+k*dc[d],b=block(rr,cc);
+  if(solid(b) || b==BOUNDARY || b==INVALID)break;
+  if(k>=2 && (b==UNKNOWN || b==WATER))count++;
+ }
+ return count;
+}
+
+def int rs_light() {
+ if(!o.inv[I_TORCH])return -1;
+ int best=-1;float bv=0;
+ for(int act=1;act<=4;act++) {
+  if(!known_direction(act))continue;
+  int r=a.r,c=a.c;
+  if(act!=o.dir) {
+   int nr=r+dr[act],nc=c+dc[act];
+   if(inside(nr,nc) && walkable(block(nr,nc)) && !mob_at(cell(nr,nc))){r=nr;c=nc;}
+  }
+  int rr=r+dr[act],cc=c+dc[act];
+  if(!inside(rr,cc) || !place_valid(cell(rr,cc),PLACE_TORCH))continue;
+  int gain=0;
+  for(int y=-3;y<=3;y++)for(int x=-3;x<=3;x++)
+   if(y*y+x*x<=12 && block(rr+y,cc+x)==UNKNOWN)gain++;
+  int action=act==o.dir?PLACE_TORCH:act;
+  float damage=wm_incoming_damage(action);
+  if(damage>=o.health-1)continue;
+  float value=gain-5*damage-(action==PLACE_TORCH?0:2);
+  if(gain>=5 && value>bv){bv=value;best=action;}
+ }
+ return best;
+}
+
+/* Block a mob shot coming down the faced line with a stone. */
+def int rs_cover() {
+ if(!o.inv[I_STONE] || wm_incoming_damage(NOOP)>0)return -1;
+ int r=a.r+dr[o.dir],c=a.c+dc[o.dir],here=cell(a.r,a.c);
+ if(!inside(r,c) || !place_valid(cell(r,c),PLACE_STONE))return -1;
+ int p=cell(r,c);
+ if(p==a.floors[a.level].up || p==a.floors[a.level].down || here==a.floors[a.level].up || here==a.floors[a.level].down)return -1;
+ for(int j=0;j<wm_shot_count();j++) {
+  int q=wm_shot_cell(j),hd=wm_shot_heading(j);
+  for(int k=2;k<=4;k++)if(q==cell(a.r+k*dr[o.dir],a.c+k*dc[o.dir]) &&
+      hd && dr[hd]==-dr[o.dir] && dc[hd]==-dc[o.dir])return PLACE_STONE;
+ }
+ return -1;
+}
+
+def int rs_escape(int event) {
+ int here=cell(a.r,a.c);
+ if(event>a.rs_event) {
+  a.rs_event=event;a.rs_target=0;a.rs_until=a.t+8;
+  float bv=float(rs_exposure(a.r,a.c))-1;paths_within(60);
+  for(int y=-3;y<=3;y++)for(int x=-3;x<=3;x++) {
+   int r=a.r+y,c=a.c+x;
+   if(!inside(r,c) || !walkable(block(r,c)))continue;
+   int p=cell(r,c),d=first_at(p);
+   if(p==here || mob_at(p) || dist_at(p)>60 || d<1 || d>4 ||
+      wm_incoming_damage(d)>0)continue;
+   float value=rs_exposure(r,c)+0.05f*dist_at(p)+4*wm_melee_threat_at(r,c);
+   if(value<bv){bv=value;a.rs_target=p+1;}
+  }
+ }
+ if(!a.rs_target || a.t>a.rs_until)return -1;
+ int p=a.rs_target-1;
+ if(p==here){a.rs_target=0;return -1;}
+ paths_within(80);
+ int d=first_at(p);
+ if(dist_at(p)>80 || d<1 || d>4 || wm_incoming_damage(d)>0) {
+  a.rs_target=0;return -1;
+ }
+ return d;
+}
+
+/* ---- Low-health flight (m_combat.inc) ----
+ * LOWFLEE: at troll_low health (one more troll blow leaves < 3), tactical()'s
+ * facing wait holds the agent still while a troll approaches (the incumbent's
+ * TB(19), the same hold made explicit, cost -7.7pp). With no melee mob
+ * adjacent and nothing incoming, and a troll known within 6, take the route to
+ * the up ladder (<= 150 steps) now; a pursuing melee mob never strikes a
+ * player who keeps moving away, and mobs never follow a ladder. */
+def int cb_lowflee() {
+ /* bit 1: Troll Mines (troll blow); bit 2: Ice-phase Fire crossings (pigman blow 6.2+ in ice armour; the
+  * Fire-phase retreat rule r_fire_low_retreat does not apply there, the drink/health<=4 leave comes later);
+  * bit 4: Troll Mines after a slimeball hit (troll_slime_t, within 30 steps) when one more would kill: the deep
+  * thing is usually unseen (30 of 113 fatal slimeball hits had a known shooter within 6). */
+ int mines=(CB_LOWFLEE&1) && a.level==5,fire=(CB_LOWFLEE&2) && a.level==6 && icetrip();
+ int slime=(CB_LOWFLEE&4) && a.level==5 && a.troll_slime_t && a.t-a.troll_slime_t<=30 && o.health<=wm_slimeball_damage()+1;
+ if(!mines && !fire && !slime)return -1;
+ if(!slime) {
+  float hit=wm_attack_damage(mines?6:7);
+  if(!(o.health<8+o.str-0.01f && o.health-hit<3))return -1;
+  if(!wm_melee_within(6))return -1;
+ }
+ if(wm_melee_within(1) || wm_incoming_damage(NOOP)>0)return -1;
+ if(sealed_in())return -1;
+ int up=a.floors[a.level].up;if(up<0 || !path_near(up,a.level==5?150:250))return -1;
+ return travel(0);
+}
+
+/* ---- Combat tactics (m_combat.inc: tactical) ----
+ * Adjacent fights, dodges, retreats and spells, one step ahead. Returns an
+ * action, or -1 when no tactic applies. */
+const ICETRIP_ESCAPE_NEAR = 0;
+const ICETRIP_EVADE = 0;
+const ICETRIP_PFACE = 0;
+const CB_INT_MAX = 2147483647;
+
+/* Icetrip on Fire: evade rather than trade. In ice armour a pigman blow
+ * costs 6.2-6.8 of 12-13 health, and 115 of 194 melee hits on Fire in 60
+ * traced worlds landed while turning towards a pigman that had just stepped
+ * beside us (64 more while casting at it: spells resolve after its blow). A
+ * melee mob only strikes if it starts its turn beside us, and we act first:
+ * any step to a cell not beside a ready mob avoids the blow, and pigmen
+ * (speed .75) fall behind a player who keeps moving. Step to such a cell,
+ * preferring the route to the ladder the trip is heading for; take that
+ * ladder if we stand on it (mobs never follow). Returns -1 to fall through
+ * to the remaining tactics (the target's `goto no_evade`). */
+def int tc_icetrip_evade(int start,float incoming) {
+ if(!(ICETRIP_EVADE && icetrip() && a.level==6 && incoming>0))return -1;
+ int up_bound=enchant_trip() || o.food<=2 || o.health<=4,T=up_bound?a.floors[6].up:a.floors[6].down;
+ if(ICETRIP_EVADE==1 && T==start)return up_bound?ASCEND:DESCEND;
+ /* Variant 2: keep travelling, never dither. Free evasion in any direction
+  * (variant 1) circled for dozens of steps until two pigmen cornered it
+  * (-9.3pp). Here only the route's next step is taken, when it is safe;
+  * otherwise fight as before. Pigmen (speed .75) fall behind. */
+ if(ICETRIP_EVADE==2) {
+  /* Only far from the destination ladder: a pursuer left beside the ladder
+   * is frozen there and strikes on the next arrival (arrival hits tripled
+   * when evasion ran to the ladder). Mid-crossing it falls behind and
+   * despawns 14 cells back. Near the ladder, fight it as before. */
+  if(T<0 || path_dist(T)>=INF || dist_at(T)<200 || first_at(T)<=0)return -1;
+  int d=first_at(T),r=a.r+dr[d],c=a.c+dc[d];
+  if(!inside(r,c)||!walkable(block(r,c))||mob_at(cell(r,c))||arrow_at(cell(r,c)))return -1;
+  for(int i=0;i<a.enemy_count;i++)if(!a.enemies[i].kind && a.enemies[i].cooldown<=0 && abs(a.enemies[i].p/SIDE-r)+abs(a.enemies[i].p%SIDE-c)==1)return -1;
+  return d;
+ }
+ int best=-1,bc=CB_INT_MAX;
+ for(int d=1;d<=4;d++) {
+  int r=a.r+dr[d],c=a.c+dc[d];
+  if(!inside(r,c)||!walkable(block(r,c))||mob_at(cell(r,c))||arrow_at(cell(r,c)))continue;
+  int adj=0;
+  for(int i=0;i<a.enemy_count;i++)if(!a.enemies[i].kind && a.enemies[i].cooldown<=0 && abs(a.enemies[i].p/SIDE-r)+abs(a.enemies[i].p%SIDE-c)==1)adj=1;
+  if(adj)continue;
+  int cost=10*wm_risk(cell(r,c),!a.drinking)+(T>=0 && path_dist(T)<INF && first_at(T)==d?0:5);
+  if(cost<bc){bc=cost;best=d;}
+ }
+ return best;
+}
+
+/* Face the greedy approach of melee enemy `best` (bd cells away), counting
+ * the wait in the given counter (0: dungeon_wait, 1: vault_wait, 2:
+ * troll_wait): wait while it comes on our facing; otherwise turn towards it
+ * when turning is safe. Returns an action or -1. */
+def int tc_face_approach(int best,int bd,int counter) {
+ int er=a.enemies[best].p/SIDE-a.r,ec=a.enemies[best].p%SIDE-a.c,gr=0,gc=0,clear=wm_greedy_approach_i(best,0,&gr,&gc);
+ if(clear) {
+  /* Bounded: a mob that hovers out of reach must not stall supplies. */
+  if(er*dr[o.dir]+ec*dc[o.dir]>0) {
+   if(counter==0)a.dungeon_wait++;else if(counter==1)a.vault_wait++;else a.troll_wait++;
+   return NOOP;
+  }
+  int want=abs(er)>=abs(ec)?(er>0?DOWN:UP):(ec>0?RIGHT:LEFT);
+  int nr=a.r+dr[want],nc=a.c+dc[want];
+  /* A known blocked neighbour turns us in place; otherwise turning is
+   * a step towards it, safe only from four or more cells away. Unknown
+   * terrain cannot establish either outcome. */
+  if(known_direction(want) && (!inside(nr,nc) || !walkable(block(nr,nc)) || bd>=4))return want;
+ }
+ return -1;
+}
+
+def int tactical() {
+ int start=cell(a.r,a.c);
+ /* Avoid a lethal simultaneous attack. Cooldowns and health are inferred
+  * from consecutive public views and our own attacks, with conservative
+  * defaults when an enemy first becomes visible. */
+ float incoming=wm_melee_incoming();
+ if(o.level>=5) {
+  int fr=a.r+dr[o.dir],fc=a.c+dc[o.dir];
+  if(inside(fr,fc)) {
+   int p=cell(fr,fc),type=melee_at(p)?melee_at(p):ranged_at(p);
+   if(type && wm_hit_damage(type,ranged_at(p)!=0)>=enemy_health_at(p) &&
+      wm_incoming_damage(DO)<o.health-0.5f)return DO;
+  }
+ }
+ /* Protected Ice fights can finish during the attacker's cooldown even
+  * with little health left. Keep a half-point margin for that first hit;
+  * retreat before a lethal hit, rather than abandoning every low-HP cast. */
+ if(incoming>=o.health-(o.level==7?0.5f:1) || (o.level!=7 && o.health<=4 && incoming>0)) {
+  int best=-1;float costbest=incoming;
+  for(int d=1;d<=4;d++) {
+   int r=a.r+dr[d],c=a.c+dc[d];if(!inside(r,c)||!walkable(block(r,c))||mob_at(cell(r,c))||arrow_at(cell(r,c)))continue;
+   float cost=wm_melee_threat_at(r,c);
+   if(cost<costbest){best=d;costbest=cost;}
+  }
+  /* A realm chase only ends in a corner: pigmen and frost trolls keep pace
+   * (ep 16 danced 23 steps at 5.2 health with full mana). The up ladder is
+   * the one exit they cannot follow. Climb when on it, and prefer the first
+   * step of the route to it among equally safe retreats. */
+  if(a.level==4 || a.level==5 || a.level==6 || a.level==7 || (a.level==1 && !a.floors[5].seen)) {
+   int up=a.floors[a.level].up,climb=ASCEND;
+   /* Icetrip on Fire: the Ice ladder is home and often the nearer exit. */
+   if(ICETRIP_ESCAPE_NEAR && icetrip() && a.level==6) {
+    int D=a.floors[6].down;
+    if(D>=0 && path_dist(D)<INF && (up<0 || path_dist(up)>=INF || dist_at(D)<=dist_at(up))){up=D;climb=DESCEND;}
+   }
+   if(up==start)return climb;
+   if(best>=0 && up>=0 && path_dist(up)<INF && first_at(up)>0) {
+    int d=first_at(up),r=a.r+dr[d],c=a.c+dc[d];
+    if(inside(r,c) && walkable(block(r,c)) && !mob_at(cell(r,c)) && !arrow_at(cell(r,c))) {
+     float cost=wm_melee_threat_at(r,c);
+     if(cost<=costbest)return d;
+    }
+   }
+  }
+  if(best>=0)return best;
+ }
+ int evade=tc_icetrip_evade(start,incoming);
+ if(evade>=0)return evade;
+ /* Boss waves are finite. Finish a visible adjacent target rather than
+  * cycling forever around its nonlethal point-blank projectile threat.
+  * Movement toward the occupied target turns in place; the next DO kills.
+  * The shield can still veto this commitment when its rollout is unsafe. */
+ if(a.level==8)for(int i=0;i<4;i++) {
+  int d=1+(o.dir-1+i)%4,r=a.r+dr[d],c=a.c+dc[d];
+  if(!inside(r,c))continue;
+  int p=cell(r,c),type=melee_at(p)?melee_at(p):ranged_at(p);
+  if(type && wm_hit_damage(type,ranged_at(p)!=0)>=enemy_health_at(p) &&
+     wm_incoming_damage(o.dir==d?DO:d)<o.health-2)
+   return o.dir==d?DO:d;
+ }
+ if(arrow_at(start)) {
+  int best=-1,costbest=CB_INT_MAX;
+  for(int d=1;d<=4;d++) {
+   int r=a.r+dr[d],c=a.c+dc[d];if(!inside(r,c))continue;int p=cell(r,c);
+   if(!walkable(block(r,c))||mob_at(p)||arrow_at(p))continue;
+   int cost=wm_risk(p,!a.drinking);if(cost<costbest){best=d;costbest=cost;}
+  }
+  if(best>=0)return best;
+ }
+ for(int i=0;i<4;i++) {
+  int d=1+(o.dir-1+i)%4,r=a.r+dr[d],c=a.c+dc[d];if(!inside(r,c))continue;int p=cell(r,c);
+  if(!(mob_at(p)&5))continue;
+  if(o.dir!=d)return d;
+  int type=melee_at(p)?melee_at(p):ranged_at(p);
+  /* Sword damage resolves before a melee attack; spells resolve after it.
+   * Finish a weakened elemental immediately and preserve the remaining mana. */
+  if(type>=7 && wm_hit_damage(type,ranged_at(p)!=0)>=enemy_health_at(p))return DO;
+  if(o.mana>=2) {
+   if(type==7 && o.spells[1])return ICEBALL;
+   if(type==8 && o.spells[0])return FIREBALL;
+  }
+  return DO;
+ }
+ /* Recovery navigation needs uninterrupted turns to reach and seal its
+  * shelter. Adjacent attacks and projectile dodges above still interrupt. */
+ if(a.level==8 && (a.recovering || o.health<=GRAVEYARD_RECOVER_HEALTH))return -1;
+ /* An approaching orc survives the first iron-sword blow. An arrow or
+  * spell in the faced cell before it arrives lets that blow kill it before
+  * its first attack, including a diagonal approach into that cell. */
+ if(a.level==1 && ((o.mana>=2 && (o.spells[0] || o.spells[1])) || (o.bow && o.inv[I_ARROW]))) {
+  int shot=o.bow && o.inv[I_ARROW]?SHOOT:o.spells[0]?FIREBALL:ICEBALL;
+  float damage=shot==SHOOT?5*(1+0.2f*(o.dex-1)):3*(1+0.5f*(o.intelligence-1));
+  int fr=a.r+dr[o.dir],fc=a.c+dc[o.dir];
+  if(inside(fr,fc) && walkable(block(fr,fc)) && !mob_at(cell(fr,fc)))
+   for(int i=0;i<a.enemy_count;i++) {
+    int ep=a.enemies[i].p,dd=abs(ep/SIDE-a.r)+abs(ep%SIDE-a.c);
+    int df=abs(ep/SIDE-fr)+abs(ep%SIDE-fc);
+    if(!a.enemies[i].kind && dd==2 && df==1 && wm_hit_damage(a.enemies[i].type,0)<a.enemies[i].health &&
+       wm_hit_damage(a.enemies[i].type,0)+damage>=a.enemies[i].health)return shot;
+   }
+ }
+ /* A troll two cells away steps next into one of our neighbours and
+  * attacks after our first blow, which cannot kill 20 HP. When it can step
+  * into the faced cell, a spell cast now meets it there; if the spell and
+  * one sword blow suffice, the blow then kills it before its first attack. */
+ if((a.level==4 || a.level==5) && o.mana>=2 && (o.spells[0] || o.spells[1])) {
+  int fr=a.r+dr[o.dir],fc=a.c+dc[o.dir];float spell=3*(1+0.5f*(o.intelligence-1));
+  if(inside(fr,fc) && walkable(block(fr,fc)) && !mob_at(cell(fr,fc)))
+   for(int i=0;i<a.enemy_count;i++) {
+    int ep=a.enemies[i].p,et=a.enemies[i].type;float eh=a.enemies[i].health;
+    float blow=wm_hit_damage(et,0),pending=0;
+    int d=abs(ep/SIDE-a.r)+abs(ep%SIDE-a.c),df=abs(ep/SIDE-fr)+abs(ep%SIDE-fc);
+    if(a.enemies[i].kind || blow>=eh)continue;
+    /* A shot waiting in the faced cell hits the troll as it steps in. */
+    for(int j=0;j<a.shot_count;j++)if(a.shot_pos[j]==cell(fr,fc) && a.shot_dir[j]==o.dir)
+     pending+=wm_projectile_damage(a.shot_type[j],et,0);
+    /* Without an enchanted sword two spells are needed: start one move
+     * earlier, so the first shot waits in the faced cell. */
+    if(d==3 && df==2 && o.mana>=4 && blow+spell<eh && blow+2*spell>=eh)return o.spells[0]?FIREBALL:ICEBALL;
+    if(d==2 && df==1 && blow+spell+pending>=eh)return o.spells[0]?FIREBALL:ICEBALL;
+   }
+ }
+ /* During an Ice excursion start iceballs into a pigman's greedy approach,
+  * including a diagonal approach. The first missile waits in the faced cell;
+  * it can hit on the approach turn before the pigman starts beside us. */
+ if(icetrip() && a.level==6 && o.spells[1] && o.mana>=2 && a.shot_count<3) {
+  int fr=a.r+dr[o.dir],fc=a.c+dc[o.dir];
+  if(inside(fr,fc) && walkable(block(fr,fc)) && !mob_at(cell(fr,fc)))
+   for(int i=0;i<a.enemy_count;i++) {
+    int ep=a.enemies[i].p,vr=ep/SIDE-a.r,vc=ep%SIDE-a.c,dd=abs(vr)+abs(vc);
+    if(a.enemies[i].kind || a.enemies[i].type!=7 || dd<2 || dd>3)continue;
+    if(dd==2 && abs(ep/SIDE-fr)+abs(ep%SIDE-fc)==1)return ICEBALL;
+    if(dd==3 && o.mana>=4)for(int axis=0;axis<2;axis++) {
+     int nr=0,nc=0;if(!wm_greedy_next(vr,vc,axis,&nr,&nc))continue;
+     if(abs(nr-fr)+abs(nc-fc)==1 && walkable(block(nr,nc)))return ICEBALL;
+    }
+   }
+ }
+ /* Frost trolls resist the sword and require three fireballs. Cast into
+  * their approach before adjacency, including a diagonal final step. The
+  * missile persists in the faced cell until after the next mob movement. */
+ /* With a fire-enchanted sword (6.2 to a frost troll, resolving before its
+  * attack) two fireballs that meet the troll as it steps into the faced cell
+  * leave it within one strike: no hit at all. The first must be cast a step
+  * earlier, at distance three, when the troll's greedy step (larger offset
+  * first) leads next to the faced cell; it waits there in flight. */
+ if(a.level==7 && o.sword_enchant==1 && o.spells[0] && o.mana>=4 && a.shot_count<=1) {
+  int fr=a.r+dr[o.dir],fc=a.c+dc[o.dir];
+  if(inside(fr,fc) && walkable(block(fr,fc)) && !mob_at(cell(fr,fc)))
+   for(int i=0;i<a.enemy_count;i++) {
+    int vr=a.enemies[i].p/SIDE-a.r,vc=a.enemies[i].p%SIDE-a.c;
+    if(a.enemies[i].kind || a.enemies[i].type!=8 || abs(vr)+abs(vc)!=3 || a.enemies[i].health>2*wm_projectile_damage(3,8,0)+wm_hit_damage(8,0))continue;
+    for(int axis=0;axis<2;axis++) {
+     int nr=0,nc=0;if(!wm_greedy_next(vr,vc,axis,&nr,&nc))continue;
+     if(abs(nr-fr)+abs(nc-fc)==1 && walkable(block(nr,nc)))return FIREBALL;
+    }
+   }
+ }
+ if(a.level==7 && o.spells[0] && o.mana>=2) {
+  int fr=a.r+dr[o.dir],fc=a.c+dc[o.dir];
+  if(inside(fr,fc) && walkable(block(fr,fc)) && !mob_at(cell(fr,fc)))
+   for(int i=0;i<a.enemy_count;i++) {
+    int ep=a.enemies[i].p;
+    int dd=abs(ep/SIDE-a.r)+abs(ep%SIDE-a.c);
+    int df=abs(ep/SIDE-fr)+abs(ep%SIDE-fc);
+    if(!a.enemies[i].kind && a.enemies[i].type==8 && dd==2 && df==1)return FIREBALL;
+   }
+ }
+ /* Shoot along a clear axis. Turning towards a distant target also approaches it. */
+ int d=o.dir;
+ for(int k=1;k<=5;k++) {
+  int r=a.r+k*dr[d],c=a.c+k*dc[d];if(!inside(r,c))break;int p=cell(r,c);
+  if(mob_at(p)&5) {
+   int type=melee_at(p)?melee_at(p):ranged_at(p);
+   if(o.mana>=2 && type==7 && o.spells[1])return ICEBALL;
+   if(o.mana>=2 && type==8 && o.spells[0])return FIREBALL;
+   if(o.mana>=2 && k>=2 && (o.spells[0] || o.spells[1])) {
+    float spell=3*(1+0.5f*(o.intelligence-1));
+    float arrow=4*(1+0.2f*(o.dex-1))*(type==5?0.5f:type>=7?0.1f:1);
+    if(!o.bow || !o.inv[I_ARROW] || spell>=arrow)return o.spells[0]?FIREBALL:ICEBALL;
+   }
+   /* Dungeon orcs hit for 3 once adjacent and need two sword strikes. An
+    * arrow while one approaches in line lets the first strike finish it. */
+   if(o.bow && o.inv[I_ARROW]>0 && k>=2 && (ranged_at(p) || o.health<6 || a.level>=4 || a.level==1))return SHOOT;
+   break;
+  }
+  if(solid(block(r,c)) || block(r,c)==UNKNOWN)break;
+ }
+ /* Icetrip on Fire: turn to shoot a pigman approaching along our row or
+  * column. A mob whose smaller offset is zero moves only along that axis,
+  * so iceballs cast down the line meet it; three land before it is beside
+  * us from four or more cells, and each one shortens the fight that costs a
+  * 6+ point blow in ice armour. The shot above only fires along the facing.
+  * Turning is free when the neighbour that way is blocked; otherwise it is a
+  * step towards it, taken only from four or more cells. */
+ if(ICETRIP_PFACE && icetrip() && a.level==6 && o.spells[1] && o.mana>=2 && a.shot_count<3) {
+  int bestd=0,bk=99;
+  for(int i=0;i<a.enemy_count;i++) {
+   if(a.enemies[i].kind || a.enemies[i].type!=7)continue;
+   int ep=a.enemies[i].p,er=ep/SIDE-a.r,ec=ep%SIDE-a.c,k=abs(er)+abs(ec);
+   if((er && ec) || k<2 || k>5 || !wm_firing_line(a.r,a.c,ep/SIDE,ep%SIDE))continue;
+   int want=er>0?DOWN:er<0?UP:ec>0?RIGHT:LEFT;
+   if(want==o.dir)continue;
+   int nr=a.r+dr[want],nc=a.c+dc[want];
+   if(!known_direction(want))continue;
+   if(inside(nr,nc) && walkable(block(nr,nc)) && !mob_at(cell(nr,nc)) && k<4)continue;
+   if(k<bk){bk=k;bestd=want;}
+  }
+  if(bestd)return bestd;
+ }
+ /* Face the orc's unobstructed greedy approach while it is still far
+  * enough to turn safely. Let it enter the pre-shot cell instead of
+  * walking into its reach with the wrong facing. */
+ if(a.level==1 && a.dungeon_wait<24 && ((o.mana>=2 && (o.spells[0] || o.spells[1])) || (o.bow && o.inv[I_ARROW]))) {
+  float shot=o.bow && o.inv[I_ARROW]?5*(1+0.2f*(o.dex-1)):3*(1+0.5f*(o.intelligence-1));
+  int best=-1,bd=7;
+  for(int i=0;i<a.enemy_count;i++) {
+   int ep=a.enemies[i].p,dd=abs(ep/SIDE-a.r)+abs(ep%SIDE-a.c);float blow=wm_hit_damage(a.enemies[i].type,0);
+   if(!a.enemies[i].kind && dd>=3 && dd<bd && blow<a.enemies[i].health && blow+shot>=a.enemies[i].health){best=i;bd=dd;}
+  }
+  if(best<0)a.dungeon_wait=0;
+  if(best>=0){int act=tc_face_approach(best,bd,0);if(act>=0)return act;}
+ }
+ /* Pre-casting needs the troll to arrive next to the faced cell. Walking
+  * on, or turning away, lets it arrive behind or beside us instead. Face
+  * the side it approaches from while it is still three or more cells away,
+  * then let it come. Its moves shrink its larger offset first, so a troll
+  * in front of us stays in front until it is adjacent. */
+ if((a.level==4 || a.level==5) && o.mana>=2 && (o.spells[0] || o.spells[1]) && (a.level==4?a.vault_wait:a.troll_wait)<24 &&
+    !(TB8 && a.level==5 && a.troll_door)) {
+  int best=-1,bd=7;
+  for(int i=0;i<a.enemy_count;i++) {
+   int ep=a.enemies[i].p,dd=abs(ep/SIDE-a.r)+abs(ep%SIDE-a.c);
+   if(!a.enemies[i].kind && dd>=3 && dd<bd && wm_hit_damage(a.enemies[i].type,0)<a.enemies[i].health){best=i;bd=dd;}
+  }
+  if(best<0){if(a.level==4)a.vault_wait=0;else a.troll_wait=0;}
+  /* Only a troll whose greedy approach is unobstructed will arrive. */
+  if(best>=0){int act=tc_face_approach(best,bd,a.level==4?1:2);if(act>=0)return act;}
+ }
+ /* Most melee damage before the Troll Mines is taken while turning towards
+  * a mob that has just arrived beside us (Dungeon 56%, Sewers 76%, Vault 56%
+  * of melee damage in 300-400 sampled worlds): the turn costs the step in
+  * which it strikes. A diamond sword kills lizards and knights in one blow,
+  * so facing the cell it arrives in removes the hit. Predict that cell from
+  * its greedy approach, face it while turning is safe, and wait for it.
+  * Only for mobs one blow kills: an iron-sword orc fight costs its hit either
+  * way, and waiting under mage fire cost 1.1 points of Dungeon passes. */
+ if(!a.floors[5].seen && a.level>=1 && a.level<=4 && a.early_wait<24) {
+  int best=-1,bd=7;
+  for(int i=0;i<a.enemy_count;i++) {
+   int ep=a.enemies[i].p,dd=abs(ep/SIDE-a.r)+abs(ep%SIDE-a.c);
+   if(!a.enemies[i].kind && dd>=2 && dd<bd && wm_hit_damage(a.enemies[i].type,0)>=a.enemies[i].health){best=i;bd=dd;}
+  }
+  int exposed=0;
+  for(int i=0;i<a.enemy_count;i++)if(a.enemies[i].kind && wm_firing_line(a.r,a.c,a.enemies[i].p/SIDE,a.enemies[i].p%SIDE))exposed=1;
+  if(best<0)a.early_wait=0;
+  if(best>=0 && !exposed) {
+   int r=0,c=0,clear=wm_greedy_approach_i(best,1,&r,&c);
+   if(clear && abs(r)+abs(c)==1) {
+    int want=r>0?DOWN:r<0?UP:c>0?RIGHT:LEFT;
+    if(o.dir==want){a.early_wait++;return NOOP;}
+    int nr=a.r+dr[want],nc=a.c+dc[want];
+    /* A blocked neighbour turns us in place; an open one is a step, safe
+     * only while the mob is four or more cells away. */
+    if(known_direction(want) && (!inside(nr,nc) || !walkable(block(nr,nc)) || mob_at(cell(nr,nc)) || bd>=4)){a.early_wait++;return want;}
+   }
+  }
+ }
+ return -1;
+}
+
+/* ---- The safety shield's override policy (full_tactics.inc) ----
+ * The program's tactical rules look one step ahead; the shield simulates the
+ * local fight a few steps deep with I's rollout simulator and vetoes the
+ * chosen action only when the simulation predicts that it leads to death much
+ * more often than an alternative does. The program's strategy is kept:
+ * ladders, spells, potions and every non-combat goal are untouched, and the
+ * alternatives are restricted to NOOP, the four moves, a strike, a stone in
+ * the faced cell, a missile into it and the ladder we stand on. */
+const TX_ROLLOUTS = 24;    /* rollouts per evaluation (death rates are n/24) */
+const TX_HORIZON = 8;      /* steps per rollout */
+/* Veto when the program's action dies this much more often (fraction of rollouts). */
+const TX_MARGIN = 0.25f;
+const TX_MIN_RISK = 0.30f;
+/* Levels the shield acts on (bit mask over 0..8). */
+const TX_LEVELS = 0x1FE;
+/* Extra shield alternatives: bit 1 place a stone in the faced cell, bit 2 take
+ * the ladder we stand on (up; down only to a floor already seen), bit 4 a
+ * missile into the faced cell on every floor (always on floors 5-8). */
+const TX_ALT2 = 3;
+
+/* Cheap trigger: a hostile close enough to matter within the horizon. */
+def int tx_engaged() {
+ float threat=0;
+ for(int i=0;i<a.enemy_count;i++) {
+  int d=abs(a.enemies[i].p/SIDE-a.r)+abs(a.enemies[i].p%SIDE-a.c);
+  if(!a.enemies[i].kind && d<=5)threat+=wm_attack_damage(a.enemies[i].type)*2;
+  if(a.enemies[i].kind && d<=7)threat+=tx_mob_shot(tx_ranged_code(a.enemies[i].type))*2;
+ }
+ for(int j=0;j<wm_shot_count();j++) {
+  int q=wm_shot_cell(j);if(abs(q/SIDE-a.r)+abs(q%SIDE-a.c)<=4)threat+=tx_mob_shot(wm_shot_code(j));
+ }
+ return threat>=o.health;
+}
+
+/* The shield. Returns the action to commit. Death counts stand for the rates
+ * n/TX_ROLLOUTS: for whole counts A and B the rates compare as A and B do and
+ * distinct rates differ by far more than 1e-6, so an alternative with more
+ * deaths than the best so far can never be chosen. */
+def int tx_shield(int action,out int skill) {
+ if(o.sleeping || o.resting || o.level>8 || !((TX_LEVELS>>o.level)&1))return action;
+ if(action>=POTION_RED && action<=POTION_YELLOW)return action;
+ if(action==ASCEND || action==DESCEND || action==SLEEP || action==REST)return action;
+ if(!tx_engaged())return action;
+ /* From the Troll Mines on, the simulated fighter spends mana and arrows,
+  * and casts at a faced opponent (the late model). */
+ int late=o.level>=5;
+ /* The action stands unless pd reaches the risk floor, that is unless at
+  * least `risky` rollouts die. */
+ float min_risk=o.level==8?0.10f:TX_MIN_RISK;int risky=0;
+ while(risky<=TX_ROLLOUTS && float(risky)/TX_ROLLOUTS<min_risk)risky++;
+ /* Count the dying rollouts first, each only as far as it can still die:
+  * the full evaluation (and its damage) is needed only for a veto check. */
+ if(!tx_dies_at_least(action,risky,TX_ROLLOUTS,TX_HORIZON,late))return action;
+ int pdead=0,complete=0;
+ float pm=tx_evaluate(action,risky,TX_ROLLOUTS,TX_ROLLOUTS,TX_HORIZON,late,&pdead,&complete);
+ if(!complete)return action;
+ float pd=float(pdead)/TX_ROLLOUTS;
+ if(pd<min_risk)return action;
+ int best=-1,bdead=pdead;float bd=pd,bm=pm;
+ int fr=a.r+dr[o.dir],fc=a.c+dc[o.dir],faced=0;
+ for(int i=0;i<a.enemy_count;i++)if(a.enemies[i].p/SIDE==fr && a.enemies[i].p%SIDE==fc)faced=1;
+ for(int alt=NOOP;alt<=DO;alt++) {
+  if(alt==action || (alt==DO && !faced))continue;
+  if(alt>=LEFT && alt<=DOWN && !known_direction(alt))continue;
+  int dd=0,ok=0;float m=tx_evaluate(alt,0,bdead,TX_ROLLOUTS,TX_HORIZON,late,&dd,&ok);
+  if(ok && (dd<bdead || (dd==bdead && m<bm))){best=alt;bdead=dd;bd=float(dd)/TX_ROLLOUTS;bm=m;}
+ }
+ if((TX_ALT2&1) && o.inv[I_STONE]>0 && inside(fr,fc) && !faced &&
+    (walkable(block(fr,fc)) || block(fr,fc)==WATER || block(fr,fc)==LAVA) && !a.floors[a.level].marks[cell(fr,fc)].item) {
+  int dd=0,ok=0;float m=tx_evaluate(PLACE_STONE,0,bdead,TX_ROLLOUTS,TX_HORIZON,late,&dd,&ok);
+  if(ok && (dd<bdead || (dd==bdead && m<bm))){best=PLACE_STONE;bdead=dd;bd=float(dd)/TX_ROLLOUTS;bm=m;}
+ }
+ if(((TX_ALT2&4) || o.level>=5) && inside(fr,fc) && !solid(block(fr,fc))) {
+  /* a missile into the faced cell (spells need 2 mana; arrows need the bow) */
+  int cast[3]={-1,-1,-1};
+  if(o.spells[0] && o.mana>=2)cast[0]=FIREBALL;
+  if(o.spells[1] && o.mana>=2)cast[1]=ICEBALL;
+  if(o.bow && o.inv[I_ARROW]>0)cast[2]=SHOOT;
+  for(int k=0;k<3;k++)if(cast[k]>=0 && cast[k]!=action) {
+   int dd=0,ok=0;float m=tx_evaluate(cast[k],0,bdead,TX_ROLLOUTS,TX_HORIZON,late,&dd,&ok);
+   if(ok && (dd<bdead || (dd==bdead && m<bm))){best=cast[k];bdead=dd;bd=float(dd)/TX_ROLLOUTS;bm=m;}
+  }
+ }
+ if(TX_ALT2&2) {
+  int here=cell(a.r,a.c),alt=-1;
+  if(a.floors[a.level].up==here && a.level>0 && a.level<8)alt=ASCEND;
+  else if(a.floors[a.level].down==here && a.level<7 && a.floors[a.level+1].seen)alt=DESCEND;
+  if(alt>=0) {
+   int dd=0,ok=0;float m=tx_evaluate(alt,0,bdead-1,TX_ROLLOUTS,TX_HORIZON,late,&dd,&ok);
+   if(ok && dd<bdead){best=alt;bdead=dd;bd=float(dd)/TX_ROLLOUTS;bm=m;}
+  }
+ }
+ if(best>=0 && pd-bd>=(o.level==8?0.125f:TX_MARGIN)){skill=FIGHT;return best;}
+ return action;
+}

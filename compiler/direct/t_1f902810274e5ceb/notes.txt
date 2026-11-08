@@ -1,0 +1,21 @@
+Independent direct synthesis for t_1f902810274e5ceb.
+Known task: reach floor 3, then reach floor 1. No resource acquisition or maintained reserves.
+
+Read both permitted baseline result JSON files in full, all four permitted baseline row files, reference.py, incumbent.py, compiler/search/audit APIs, relevant frozen navigation/filter/preparation/rule source, and the supplied old-task resource diagnostic. No other task, new search, validation outcome, or held-out world outcome was inspected. Candidate feedback was restricted to this goal's own rounds. No supplemental rollout or trace evaluations were run.
+
+Baseline: original and guards 5/8 success, failure-penalized steps 30271.625; reference 4/8, 31236.375; incumbent 6/8, 21807.125. The reference's very many ascents suggested direct descent was disrupting shallow-floor preparation. The baseline incumbent saves substantial time by returning immediately after first reaching floor 3, but still spends many thousands of steps preparing deeper expedition equipment that this reach-and-return goal does not require.
+
+Candidate 1: require iron pick/sword and a cleared floor, then use direct downward travel on every floor; explicitly search missing exits using Mines lighting/probing and frontier_walk. Return immediately when target is above current floor. Inherited higher-priority survival remains unchanged. Observed result: 2/8 successes, 39593.25 failure-penalized steps, 6 deaths, 0 violations, 0 timeouts. Numerous shallow-floor oscillations appeared, consistent with preemption of surface provisioning and stock preparation. Candidate source is immutable after evaluation.
+
+Candidate 2: restore all original preparation and travel on floors 0 and 1. Intercept only cleared Mines downward route with iron equipment, retaining the explicit missing-exit search and immediate return. Observed result: 5/8 successes, 23017.875 failure-penalized steps, 3 deaths, 0 violations, 0 timeouts. Successful lengths were 5078, 5257, 7297, 7653, 8858; however one previously successful baseline world died without finding the Mines exit. Exit-search intervention can redirect scarce light/resources and alter later survival, so candidate 3 removes it.
+
+Candidate 3: retain all original preparation, supplies, equipment and unknown-exit discovery; only use direct descent once a cleared Mines exit is already reachable and iron pick/sword are held. Return immediately after floor 3. This independently designed progression concentrates intervention on the known needless deeper-equipment delay and avoids duplicating original exploration semantics.
+
+Protocol: exactly three search.py direct evaluations, candidate numbers 1, 2, 3, each workers=3, eight tuning worlds, seed 2030000000, horizon 50000. search.py performs compile preflight before immutable archive. No evaluated candidate was edited. No selected.py was authored. Parent owns later selection and testing. Platform token cost unknown.
+
+Final candidate 3 tuning feedback: 7/8 successes (0.875), 13661.75 failure-penalized steps, 1 death, 0 violations, 0 timeouts, 0.875 mean progress. search.py wrote closed.json with search_closed=true and validation_feedback_used=false. The search is finished; this is training feedback only and parent will select using the separate prescribed procedure.
+
+Immutable candidate SHA256:
+1 04003c5e35f17bd7ab8ee95e4cd1c29566502dab7d405b7f063d462c0f3237b7
+2 50cd00e7a72271c0c20a68be8f2bf9575e5c73a062c854ab7dd0b43e1b23f67c
+3 1f1228b781c401367be54513543c4ce3b02be8495c98b34076611f86d9d9cb36

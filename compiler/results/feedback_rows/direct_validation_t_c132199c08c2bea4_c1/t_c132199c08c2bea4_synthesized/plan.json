@@ -1,0 +1,39 @@
+{
+  "goal": {
+    "name": "t_c132199c08c2bea4",
+    "sequence": [
+      {
+        "reach": 3
+      },
+      {
+        "reach": 2
+      },
+      {
+        "reach": 3
+      },
+      {
+        "reach": 2
+      },
+      {
+        "reach": 3
+      }
+    ]
+  },
+  "arm": "synthesized",
+  "compiler_sha256": "b6b07d44f33f7e1e0a48c6e62ca31df2a168710a21664f6422b27edc920fddb4",
+  "controller": "direct/t_c132199c08c2bea4/round_1/source.py",
+  "controller_sha256": "304e8ce5646e78b682bb6d41143e6f0d0f0f4c8fb2507c7584ed80baabb64e8a",
+  "snapshot_sha256": "b3c66554387dd0e804cab834746328459469d8077853eace6f50e3e6682c6700",
+  "sources": {
+    "floor8.tr": "5d5804c677e78ae12dc807f2ccc410860979e2e51f8cdd1ffb56991f905da191",
+    "combat.tr": "b1fd57de24eeb9346aa75a129afa944eb16210f2c4d6e9a5dc8435eea40f838c",
+    "controller.tr": "d7cb2896ae3fe7272d675980f57be303c9a7bf1097469503467e02d718f63b18",
+    "filter.tr": "cf3e86eaac5eb3b50efa291bdb2ccc500389948405a7861e6aa1c97b217bb508",
+    "hooks.tr": "9f9b873b786a3c916f895b38d9ae57ee13ab3cfe2c470ae43ffe35f61a372730",
+    "params.tr": "ec8440dc765655fb8f53d0efb8bc0cfde588713687ef822e94f20f2316416c09",
+    "plan.tr": "85bc75eebcfe895db658581177971a967bdce5b280a5dea11f9b99ae14ea2bbe",
+    "sequence.tr": "d41bd76174664f2b500d2a4285162a1926c13bf0ad50119a462df03c47031018",
+    "supply.tr": "0cae950048d6a9756df5fd6dc6412f9e70c8763dea421eebc3623f2fba143a4e"
+  },
+  "order_sha256": "07d17739e883778da0c4be420af23ef4c952d1cb1f2e0d78b312919a141644b1"
+}

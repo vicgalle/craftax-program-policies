@@ -1,0 +1,365 @@
+{
+  "common": {
+    "created_utc": "2026-10-20T20:58:45.613598+00:00",
+    "baseline_policy": "response_cover",
+    "candidate_policy": "boss_progress_rescue",
+    "base_seed": 81000000,
+    "episodes": 2048,
+    "horizon": 100000,
+    "baseline": {
+      "arrival8": {
+        "k": 1034,
+        "n": 2048,
+        "rate": 50.48828125,
+        "ci95": [
+          48.323983673917915,
+          52.65075043811102
+        ]
+      },
+      "victory": {
+        "k": 183,
+        "n": 2048,
+        "rate": 8.935546875,
+        "ci95": [
+          7.775742821681651,
+          10.249118356686111
+        ]
+      },
+      "victory_given_arrival": {
+        "k": 183,
+        "n": 1034,
+        "rate": 17.69825918762089,
+        "ci95": [
+          15.492758774232543,
+          20.142891213202923
+        ]
+      },
+      "native_return": {
+        "n": 2048,
+        "mean": 166.9830273017578,
+        "ci95": [
+          164.24027240959657,
+          169.72578219391903
+        ]
+      },
+      "achievements_percent": {
+        "n": 2048,
+        "mean": 84.88587336753731,
+        "ci95": [
+          84.04402063650963,
+          85.727726098565
+        ]
+      },
+      "timeouts_without_victory": 478
+    },
+    "candidate": {
+      "arrival8": {
+        "k": 1034,
+        "n": 2048,
+        "rate": 50.48828125,
+        "ci95": [
+          48.323983673917915,
+          52.65075043811102
+        ]
+      },
+      "victory": {
+        "k": 581,
+        "n": 2048,
+        "rate": 28.369140625,
+        "ci95": [
+          26.458667955441094,
+          30.360610881677708
+        ]
+      },
+      "victory_given_arrival": {
+        "k": 581,
+        "n": 1034,
+        "rate": 56.18955512572534,
+        "ci95": [
+          53.14794628429236,
+          59.18534234086972
+        ]
+      },
+      "native_return": {
+        "n": 2048,
+        "mean": 169.30264156835938,
+        "ci95": [
+          166.4802465150724,
+          172.12503662164636
+        ]
+      },
+      "achievements_percent": {
+        "n": 2048,
+        "mean": 85.31293726679104,
+        "ci95": [
+          84.45834093536257,
+          86.1675335982195
+        ]
+      },
+      "timeouts_without_victory": 155
+    },
+    "paired": {
+      "victory": {
+        "baseline": {
+          "k": 183,
+          "n": 2048,
+          "rate": 8.935546875,
+          "ci95": [
+            7.775742821681651,
+            10.249118356686111
+          ]
+        },
+        "candidate": {
+          "k": 581,
+          "n": 2048,
+          "rate": 28.369140625,
+          "ci95": [
+            26.458667955441094,
+            30.360610881677708
+          ]
+        },
+        "gain_pp": 19.43359375,
+        "ci95_pp": [
+          17.44705717131423,
+          21.42013032868577
+        ],
+        "gained": 453,
+        "lost": 55,
+        "p_exact": 6.838891559317826e-79,
+        "both_win": 128,
+        "neither_win": 1412
+      },
+      "arrival8": {
+        "baseline": {
+          "k": 1034,
+          "n": 2048,
+          "rate": 50.48828125,
+          "ci95": [
+            48.323983673917915,
+            52.65075043811102
+          ]
+        },
+        "candidate": {
+          "k": 1034,
+          "n": 2048,
+          "rate": 50.48828125,
+          "ci95": [
+            48.323983673917915,
+            52.65075043811102
+          ]
+        },
+        "gain_pp": 0,
+        "ci95_pp": [
+          0.0,
+          0.0
+        ],
+        "gained": 0,
+        "lost": 0,
+        "p_exact": 1.0,
+        "both_win": 1034,
+        "neither_win": 1014
+      },
+      "victory_given_arrival": {
+        "baseline": {
+          "k": 183,
+          "n": 1034,
+          "rate": 17.69825918762089,
+          "ci95": [
+            15.492758774232543,
+            20.142891213202923
+          ]
+        },
+        "candidate": {
+          "k": 581,
+          "n": 1034,
+          "rate": 56.18955512572534,
+          "ci95": [
+            53.14794628429236,
+            59.18534234086972
+          ]
+        },
+        "gain_pp": 38.49129593810445,
+        "ci95_pp": [
+          34.9190587449816,
+          42.063533131227295
+        ],
+        "gained": 453,
+        "lost": 55,
+        "p_exact": 6.838891559317826e-79,
+        "both_win": 128,
+        "neither_win": 398
+      },
+      "native_return_difference": {
+        "n": 2048,
+        "mean": 2.319614266601563,
+        "ci95": [
+          2.0746656068974545,
+          2.5645629263056717
+        ]
+      },
+      "achievements_percentage_point_difference": {
+        "n": 2048,
+        "mean": 0.42706389925373134,
+        "ci95": [
+          0.38315845414873967,
+          0.470969344358723
+        ]
+      }
+    },
+    "identical_nonarriving_episode_records": 1014,
+    "all_arrival_indicators_identical": true,
+    "baseline_replay_worlds": 32,
+    "optimization_world_overlap": 0,
+    "localization_errors": 0,
+    "interval_method": "Wilson for marginal binary rates; sample-standard-error normal interval for paired differences and means, matching the paper.",
+    "test_method": "Exact two-sided McNemar test on discordant victory indicators.",
+    "interpretation": "Matched common-cohort placement of frozen policies. This is the existing paper cohort, not a newly generated independent holdout. Campaign-specific fresh tests remain separate.",
+    "evidence_sha256": {
+      "benchmarks/policy_lineage/recursive/seed81000000/recursive.csv.gz": "338ec6e2a652df8c5ae6dd06f31991f3eee78707218c5ec5c3d30c8489bc3bd0",
+      "benchmarks/policy_lineage/necromancer/seed81000000/necromancer.csv.gz": "d3d9ef987f78f5693cd94b7e4153ad5363e43aab22fa03ee2ce1a1c5ec5948c0",
+      "benchmarks/policy_lineage/necromancer/seed81000000/necromancer.json": "dbd0870c3d4b4811e852dd6a4a1cbea3ddc4310df0d676a5d30d1a42f3ef219a",
+      "benchmarks/policy_lineage/necromancer/protocol.json": "c9b8ba4b77742bc29dd23625b164fd57dd99de0f5438d636d235d8c86dbbd102",
+      "benchmarks/policy_lineage/necromancer/baseline_replay/result.json": "a6e68e5ab0b7b59f8b4acb0b040a691932441f1326be89aa71bbf6b1a58c1c93",
+      "benchmarks/policy_lineage/necromancer/optimization_overlap.json": "e2c77fd68880afed6e03e05035ab1b6b37938d365dfaeeb00cd22d126dd291e9",
+      "benchmarks/policy_lineage/necromancer_results.py": "a1b826ae37338f8afa8dc5ab418048b3601ac5d7eba21893f4a9bb6bc499521b"
+    }
+  },
+  "campaigns": {
+    "r1": {
+      "candidate": "cautious_finish_legal",
+      "accepted": true,
+      "paired": {
+        "baseline": {
+          "k": 26,
+          "n": 256,
+          "rate": 10.15625,
+          "ci95": [
+            7.02545071910243,
+            14.465180496222601
+          ]
+        },
+        "candidate": {
+          "k": 56,
+          "n": 256,
+          "rate": 21.875,
+          "ci95": [
+            17.2470829071034,
+            27.334539127243684
+          ]
+        },
+        "gain_pp": 11.71875,
+        "ci95_pp": [
+          6.4885355465414545,
+          16.948964453458544
+        ],
+        "gained": 40,
+        "lost": 10,
+        "p_exact": 2.3861331676755526e-05,
+        "both_win": 16,
+        "neither_win": 190
+      },
+      "development_worlds": 128,
+      "candidates": 14,
+      "development_seed": 1001000000,
+      "final_seed": 1101000000
+    },
+    "r2": {
+      "candidate": "boss_recovery_search",
+      "accepted": false,
+      "paired": {
+        "baseline": {
+          "k": 128,
+          "n": 512,
+          "rate": 25.0,
+          "ci95": [
+            21.444757356932705,
+            28.92760501167037
+          ]
+        },
+        "candidate": {
+          "k": 143,
+          "n": 512,
+          "rate": 27.9296875,
+          "ci95": [
+            24.21879714202593,
+            31.969304011506473
+          ]
+        },
+        "gain_pp": 2.9296875,
+        "ci95_pp": [
+          0.15163417098436016,
+          5.7077408290156395
+        ],
+        "gained": 34,
+        "lost": 19,
+        "p_exact": 0.053438810537711046,
+        "both_win": 109,
+        "neither_win": 350
+      },
+      "development_worlds": 256,
+      "candidates": 39,
+      "development_seed": 1201000000,
+      "final_seed": 1301000000
+    },
+    "r3": {
+      "candidate": "boss_progress_rescue",
+      "accepted": true,
+      "paired": {
+        "baseline": {
+          "k": 106,
+          "n": 512,
+          "rate": 20.703125,
+          "ci95": [
+            17.417922322493425,
+            24.42468982821331
+          ]
+        },
+        "candidate": {
+          "k": 129,
+          "n": 512,
+          "rate": 25.1953125,
+          "ci95": [
+            21.6290185239251,
+            29.131059763673267
+          ]
+        },
+        "gain_pp": 4.4921875,
+        "ci95_pp": [
+          2.539558068007425,
+          6.444816931992575
+        ],
+        "gained": 25,
+        "lost": 2,
+        "p_exact": 5.647540092468262e-06,
+        "both_win": 104,
+        "neither_win": 381
+      },
+      "development_worlds": 256,
+      "candidates": 32,
+      "development_seed": 1401000000,
+      "final_seed": 1501000000
+    }
+  },
+  "evidence_sha256": {
+    "benchmarks/policy_lineage/necromancer/metrics.json": "a60822b527aa4bbd51a66a8d55c1f01d7dcc03a66c26f5cd3c71ebe9d641ba7a",
+    "benchmarks/necromancer_recursive1/decision.json": "2cbed3467f1940169d73eeb730559f90966c402fe3370057cd20d3247f75e014",
+    "benchmarks/necromancer_recursive1/final_freeze.json": "667faaaecfb8341c68fbcc5b1f983b2aa0be258bdf665815f566ddadb4959df7",
+    "benchmarks/necromancer_recursive1/protocol.json": "8c036a04a1f6d430379cae9c7c32fa98ac4b1b11f7018e349502b2dc4f386487",
+    "benchmarks/necromancer_recursive1/module_tree.json": "227adcc8991a1e8872db617c25f7a2cfc138c62d0aa539eb0f9bd608fd64d44f",
+    "benchmarks/necromancer_recursive1/runs/baseline_final/rows.csv": "c370c7514cfd8994ec86a4dc2d23bb45a037994628a2faa22320f75d2158c489",
+    "benchmarks/necromancer_recursive1/runs/candidate_final/rows.csv": "9748d0b855cbbbd72f608cab93d262b4587aba35c6f6d95766d932f923b88797",
+    "benchmarks/necromancer_recursive2/decision.json": "2276a1dc1996db76db9664c0ddee46c2d3b2a4ab08c1816c787e2f3541e8734e",
+    "benchmarks/necromancer_recursive2/final_freeze.json": "5db322699772dd0bf91b392b25e2a731de175ee9d5dad39d39c4fd56e23be429",
+    "benchmarks/necromancer_recursive2/protocol.json": "c36d8249522c63bf775b786c753402deb8de46343b1996d7643e32b1c20904a7",
+    "benchmarks/necromancer_recursive2/module_tree.json": "00420a7615c47eb7887a17c9e91050160a991a80162dd5ac44b1728da0267517",
+    "benchmarks/necromancer_recursive2/runs/baseline_final/rows.csv": "97830f5b2063eaadbeca69b307764628cce0b0ace8fb63b8a14ea8e9d343abf3",
+    "benchmarks/necromancer_recursive2/runs/candidate_final/rows.csv": "6fc405d3f0e6acb1170a6d95d31ddee70f897291a1fc4c4176f858d1ba33ea38",
+    "benchmarks/necromancer_recursive3/decision.json": "c7af042c34c67d98854aac367eee92eff9713f554931899e08d2e1a2fb59c0f1",
+    "benchmarks/necromancer_recursive3/final_freeze.json": "d65e20c7b15ca9bee30db442ed7745d55ebb6d535d1ed22ad601c3279aca519f",
+    "benchmarks/necromancer_recursive3/protocol.json": "abdc22e92c45950239972b15ff56842dac114b8524ed9cba02879b1468355835",
+    "benchmarks/necromancer_recursive3/module_tree.json": "e4c54b3ddb4166cf67eb0ba6427d1cb4f88da440ce88bf71962753b316ea4ec4",
+    "benchmarks/necromancer_recursive3/runs/baseline_final/rows.csv": "7b50d7cd334502c2c9955fac49814a20560686069b4a4614c0e9b0889410386f",
+    "benchmarks/necromancer_recursive3/runs/candidate_final/rows.csv": "1e9ff0040be556bf5d4cfe7a68c2a935f68e7a818c94035ad58d9fa1ad63d581"
+  },
+  "interpretation": "Campaigns are separate frozen paired tests; the common-cohort comparison places the preselected complete policies and does not isolate individual modules."
+}

@@ -1,0 +1,50 @@
+{
+  "candidates": [
+    {
+      "candidate": 1,
+      "controller_path": "direct/t_c79a8afb3df9946f/round_1/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 38350.0,
+      "label": "direct_validation_t_c79a8afb3df9946f_c1",
+      "run_dirs": [
+        "runs/direct_validation_t_c79a8afb3df9946f_c1/t_c79a8afb3df9946f_synthesized"
+      ],
+      "sha256": "36fa89996ff9965cfcbda6c202fdfd40d77a6474ef88f806dabefb54bbcab1d6",
+      "successes": 2
+    },
+    {
+      "candidate": 2,
+      "controller_path": "direct/t_c79a8afb3df9946f/round_2/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 38642.0,
+      "label": "direct_validation_t_c79a8afb3df9946f_c2",
+      "run_dirs": [
+        "runs/direct_validation_t_c79a8afb3df9946f_c2/t_c79a8afb3df9946f_synthesized"
+      ],
+      "sha256": "9f3f83a7256fa7fe235c839a143a278bde22ed8657063a9f6a697ddabbc2d48e",
+      "successes": 2
+    },
+    {
+      "candidate": 3,
+      "controller_path": "direct/t_c79a8afb3df9946f/round_3/source.py",
+      "episodes": 8,
+      "failure_penalized_steps": 20927.5,
+      "label": "direct_validation_t_c79a8afb3df9946f_c3",
+      "run_dirs": [
+        "runs/direct_validation_t_c79a8afb3df9946f_c3/t_c79a8afb3df9946f_synthesized"
+      ],
+      "sha256": "f2a50d002e3fed89b2c0255dd991a3d2c16a5484536006021ec61124af1eff57",
+      "successes": 6
+    }
+  ],
+  "closed_sha256": "7e486b5435c114cfb742bdec5d36ff52f208bf414559f58749a34a2b540bd4db",
+  "controller_path": "direct/t_c79a8afb3df9946f/selected.py",
+  "feedback_returned_to_search_agent": false,
+  "key": "t_c79a8afb3df9946f",
+  "mode": "direct",
+  "rule": "max successes, min failure-penalized steps, earlier candidate",
+  "selected_candidate": 3,
+  "selection_seed": 2040000000,
+  "selection_worlds": 8,
+  "sha256": "f2a50d002e3fed89b2c0255dd991a3d2c16a5484536006021ec61124af1eff57"
+}
